@@ -71,8 +71,6 @@ class ErrorCodes:
     UNZIP_ERROR_WRONG_FILECOUNT = ("4011", "Unzip error: file count does not match")
     B2SAFE_UPLOAD_ERROR = ("4012", "Unable to upload restricted zip on b2safe")
     UNZIP_ERROR_INVALID_FILE = ("4013", "Unable to create restricted zip file")
-    MISSING_PARTNERS_IDS = ("4014", "Parameter b2access_ids is missing")
-    INVALID_B2ACCESS_ID = ("4015", "Invalid b2access id")
     ORDER_NOT_FOUND = ("4016", "Order does not exist or you lack permissions")
     BATCH_NOT_FOUND = ("4017", "Batch does not exist or you lack permissions")
     MISSING_PIDS_LIST = ("4018", "Parameter 'pids' is missing")

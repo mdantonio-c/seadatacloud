@@ -13,7 +13,6 @@ tags:
   ingestion: submission of files to be approved into the cloud
   order: request an order from the interface
   # eudat: all endpoints associated to EUDAT services
-  # b2access: request/refresh authorization from B2ACCESS
   # b2safe: proxy access to irods b2safe credentials
   # registered: upload, download, list and delete objects
   # pids: resolve and download data from EUDAT Persistent IDentifier
@@ -53,9 +52,7 @@ variables:
     IRODS_DEFAULT_ADMIN_USER: rodsminer # intended to work only with GSI
     # DN of your iRODS host with GSI plugin installed
     IRODS_DN: # automatically computed within the docker network
-    IRODS_AUTHSCHEME: # to be auto-detected
-    # IRODS_AUTHSCHEME: credentials
-    # IRODS_AUTHSCHEME: GSI
+    IRODS_AUTHSCHEME: credentials
 
     IRODS_ENABLE_CONNECTOR: 1
     IRODS_HOST: rodserver.dockerized.io
