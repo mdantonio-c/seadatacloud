@@ -72,3 +72,5 @@ htmlcov
 pip-log.txt
 pip-delete-this-directory.txt
 
+# GitGuardian
+.cache_ggshield

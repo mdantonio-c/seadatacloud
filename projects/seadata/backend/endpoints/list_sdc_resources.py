@@ -1,7 +1,11 @@
+from typing import Any
+
 import requests
 from b2stage.endpoints.commons.endpoint import EudatEndpoint
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
@@ -18,7 +22,7 @@ class ListResources(EudatEndpoint, ClusterContainerEndpoint):
         summary="Request a list of existing batches and orders",
         responses={200: "Returning id of async request"},
     )
-    def post(self, **json_input):
+    def post(self, user: User, **json_input: Any) -> Response:
 
         try:
             imain = self.get_main_irods_connection()

@@ -1,8 +1,11 @@
+from typing import Any
+
 import requests
 from b2stage.endpoints.commons.endpoint import EudatEndpoint
 from restapi import decorators
 from restapi.connectors import celery
-from restapi.services.authentication import Role
+from restapi.rest.definition import Response
+from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
@@ -21,7 +24,7 @@ class Restricted(Uploader, EudatEndpoint, ClusterContainerEndpoint):
         summary="Request to import a zip file into a restricted order",
         responses={200: "Request unqueued for download"},
     )
-    def post(self, order_id, **json_input):
+    def post(self, order_id: str, user: User, **json_input: Any) -> Response:
 
         try:
             imain = self.get_main_irods_connection()

@@ -1,6 +1,8 @@
 """
 Ingestion process submission to upload the SeaDataNet marine data.
 """
+from typing import Any
+
 import requests
 from b2stage.endpoints.commons import path
 from b2stage.endpoints.commons.endpoint import (
@@ -14,6 +16,8 @@ from b2stage.endpoints.commons.endpoint import (
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import (
@@ -42,7 +46,7 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             404: "Batch not enabled or lack of permissions",
         },
     )
-    def get(self, batch_id):
+    def get(self, batch_id: str, user: User) -> Response:
 
         log.info("Batch request: {}", batch_id)
 
@@ -103,7 +107,7 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             404: "Batch not enabled or lack of permissions",
         },
     )
-    def post(self, batch_id, **json_input):
+    def post(self, batch_id: str, user: User, **json_input: Any) -> Response:
 
         obj = self.init_endpoint()
         try:
@@ -189,7 +193,7 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
         summary="Delete one or more ingestion batches",
         responses={200: "Async job submitted for ingestion batches removal"},
     )
-    def delete(self, **json_input):
+    def delete(self, user: User, **json_input: Any) -> Response:
 
         try:
             imain = self.get_main_irods_connection()

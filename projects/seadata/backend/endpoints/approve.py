@@ -5,6 +5,8 @@ import requests
 from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
@@ -24,7 +26,7 @@ class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="Approve files in a batch that are passing all qcs",
         responses={200: "Registration executed"},
     )
-    def post(self, batch_id, **json_input):
+    def post(self, batch_id: str, user: User, **json_input) -> Response:
 
         params = json_input.get("parameters", {})
         if not params:

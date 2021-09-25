@@ -5,7 +5,8 @@ from b2stage.endpoints.commons.b2access import B2accessUtilities
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import RestApiException
-from restapi.services.authentication import Role
+from restapi.rest.definition import Response
+from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
 
@@ -20,7 +21,7 @@ class PidCache(ClusterContainerEndpoint, B2accessUtilities):
         summary="Retrieve values from the pid cache",
         responses={200: "Async job started"},
     )
-    def get(self):
+    def get(self, user: User) -> Response:
 
         c = celery.get_instance()
         task = c.celery_app.send_task("inspect_pids_cache")
@@ -33,7 +34,7 @@ class PidCache(ClusterContainerEndpoint, B2accessUtilities):
         summary="Fill the pid cache",
         responses={200: "Async job started"},
     )
-    def post(self, batch_id):
+    def post(self, batch_id: str, user: User) -> Response:
 
         try:
             imain = self.get_main_irods_connection()

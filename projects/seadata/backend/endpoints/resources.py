@@ -4,6 +4,7 @@ Launch containers for quality checks in Seadata
 import json
 import os
 import time
+from typing import Any
 
 import requests
 from b2stage.endpoints.commons import path
@@ -15,6 +16,8 @@ from b2stage.endpoints.commons.endpoint import (
 )
 from restapi import decorators
 from restapi.exceptions import Conflict
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import (
     INGESTION_DIR,
@@ -34,7 +37,7 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
         path="/ingestion/<batch_id>/qc/<qc_name>",
         summary="Resources management",
     )
-    def get(self, batch_id, qc_name):
+    def get(self, batch_id: str, qc_name: str, user: User) -> Response:
         """Check my quality check container"""
 
         # log.info("Request for resources")
@@ -83,7 +86,7 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
         path="/ingestion/<batch_id>/qc/<qc_name>",
         summary="Launch a quality check as a docker container",
     )
-    def put(self, batch_id, qc_name, **input_json):
+    def put(self, batch_id: str, qc_name: str, **input_json: Any) -> Response:
         """Launch a quality check inside a container"""
 
         ###########################
@@ -271,7 +274,7 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
         path="/ingestion/<batch_id>/qc/<qc_name>",
         summary="Remove a quality check if existing",
     )
-    def delete(self, batch_id, qc_name):
+    def delete(self, batch_id: str, qc_name: str, user: User) -> Response:
         """
         Remove a quality check executed
         """

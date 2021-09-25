@@ -20,6 +20,7 @@ DELETE /api/order/<OID>
 # IMPORTS
 import urllib.parse
 from pathlib import Path
+from typing import Any
 
 import requests
 from b2stage.connectors import irods
@@ -28,6 +29,8 @@ from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.endpoints.commons.cluster import (
     MOUNTPOINT,
@@ -84,7 +87,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             404: "Order does not exist",
         },
     )
-    def get(self, order_id, ftype, code):
+    def get(self, order_id: str, ftype: str, code: str) -> Response:
         """downloading (not authenticated)"""
         log.info("Order request: {} (code '{}')", order_id, code)
         json = {"order_id": order_id, "code": code}
@@ -166,7 +169,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="List orders",
         responses={200: "The list of zip files available"},
     )
-    def get(self, order_id):
+    def get(self, order_id: str, user: User) -> Response:
         """listing, not downloading"""
 
         log.debug("GET request on orders")
@@ -221,7 +224,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="Request one order preparation",
         responses={200: "Asynchronous request launched"},
     )
-    def post(self, **json_input):
+    def post(self, user: User, **json_input: Any) -> Response:
 
         ##################
         log.debug("POST request on orders")
@@ -376,7 +379,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="Request a link to download an order (if already prepared)",
         responses={200: "The link to download the order (expires in 2 days)"},
     )
-    def put(self, order_id):
+    def put(self, order_id: str, user: User) -> Response:
 
         log.info("Order request: {}", order_id)
         msg = prepare_message(self, json={"order_id": order_id}, log_string="start")
@@ -488,7 +491,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="Remove one or more orders",
         responses={200: "Async job submitted for orders removal"},
     )
-    def delete(self, **json_input):
+    def delete(self, user: User, **json_input: Any) -> Response:
 
         try:
             imain = self.get_main_irods_connection()
