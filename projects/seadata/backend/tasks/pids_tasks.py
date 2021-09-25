@@ -1,13 +1,13 @@
 import os
 from typing import Dict
 
-from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from celery.app.task import Task
 from restapi.connectors import redis
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
+from seadata.connectors import irods
 
 TIMEOUT = 180
 

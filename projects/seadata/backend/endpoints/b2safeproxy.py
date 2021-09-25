@@ -1,11 +1,11 @@
-from b2stage.connectors import irods
-from b2stage.connectors.irods.client import IrodsException, iexceptions
 from restapi import decorators
 from restapi.exceptions import Unauthorized
 from restapi.models import Schema, fields
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
+from seadata.connectors import irods
+from seadata.connectors.irods.client import IrodsException, iexceptions
 from seadata.endpoints import SeaDataEndpoint
 
 

@@ -4,7 +4,6 @@ Ingestion process submission to upload the SeaDataNet marine data.
 from typing import Any
 
 import requests
-from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from irods.exception import NetworkException
 from restapi import decorators
@@ -19,6 +18,7 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
+from seadata.connectors import irods
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     ENABLED_BATCH,

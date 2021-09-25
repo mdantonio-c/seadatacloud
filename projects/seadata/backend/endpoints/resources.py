@@ -7,13 +7,13 @@ import time
 from typing import Any
 
 import requests
-from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from restapi import decorators
 from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
+from seadata.connectors import irods
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     INGESTION_DIR,

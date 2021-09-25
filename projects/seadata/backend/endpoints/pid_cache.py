@@ -1,13 +1,13 @@
 import os
 
 import requests
-from b2stage.connectors import irods
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
+from seadata.connectors import irods
 from seadata.endpoints import SeaDataEndpoint
 
 

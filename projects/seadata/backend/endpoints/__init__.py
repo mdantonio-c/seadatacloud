@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import pytz
-from b2stage.connectors import irods
 from b2stage.endpoints.commons import (
     CURRENT_B2SAFE_SERVER,
     CURRENT_HTTPAPI_SERVER,
@@ -18,6 +17,7 @@ from restapi.env import Env
 from restapi.exceptions import RestApiException, Unauthorized
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
+from seadata.connectors import irods
 from seadata.endpoints.commons.seadatacloud import seadata_vars
 
 MISSING_BATCH = 0

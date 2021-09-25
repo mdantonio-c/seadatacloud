@@ -4,15 +4,15 @@ iRODS file-system flask connector
 import logging
 from typing import Optional, Union
 
-from b2stage.connectors.irods.certificates import Certificates
-from b2stage.connectors.irods.client import IrodsPythonClient
-from b2stage.connectors.irods.session import iRODSPickleSession as iRODSSession
 from gssapi.raw import GSSError
 from irods import exception as iexceptions
 from restapi.connectors import Connector
 from restapi.env import Env
 from restapi.exceptions import ServiceUnavailable
 from restapi.utilities.logs import log
+from seadata.connectors.irods.certificates import Certificates
+from seadata.connectors.irods.client import IrodsPythonClient
+from seadata.connectors.irods.session import iRODSPickleSession as iRODSSession
 
 # Silence too much logging from irods
 irodslogger = logging.getLogger("irods")

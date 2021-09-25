@@ -9,7 +9,7 @@ from irods.session import iRODSSession
 # No tests for this will be included in the core
 class iRODSPickleSession(iRODSSession):
     """
-        Manipulate irods session as a string, to be saved inside a database.
+    Manipulate irods session as a string, to be saved inside a database.
     """
 
     def __getstate__(self):
