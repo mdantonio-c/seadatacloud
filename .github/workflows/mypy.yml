@@ -27,4 +27,4 @@ jobs:
           project: ${PROJECT}
           allow_untyped_defs: true
           # install: ...
-          ignore: b2handle glom gssapi gdapi irods irods.exception tests websocket
+          ignore: b2handle glom gdapi irods irods.exception tests websocket

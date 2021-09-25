@@ -25,5 +25,4 @@ RUN pip3 install --upgrade --no-cache-dir \
     Werkzeug==0.16.1 \
     git+https://github.com/EUDAT-B2STAGE/B2HANDLE.git@master \
     python-irodsclient==0.8.4 \
-    gdapi-python==0.5.3 \
-    gssapi==1.5.1
+    gdapi-python==0.5.3

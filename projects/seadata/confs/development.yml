@@ -3,9 +3,6 @@ version: "3.8"
 services:
   backend:
     environment:
-      IRODS_GUEST_USER: ${IRODS_GUEST_USER}
-      IRODS_DEFAULT_ADMIN_USER: ${IRODS_DEFAULT_ADMIN_USER}
-
       # trick for unittests
       MAIN_LOGIN_ENABLE: 1
 

@@ -48,10 +48,6 @@ variables:
     IRODS_PASSWORD: chooseapasswordwisely # NOTE: must match ALCHEMY_PASSWORD
     IRODS_ZONE: tempZone
     IRODS_HOME: home
-    IRODS_GUEST_USER: guest # intended to work only with GSI
-    IRODS_DEFAULT_ADMIN_USER: rodsminer # intended to work only with GSI
-    # DN of your iRODS host with GSI plugin installed
-    IRODS_DN: # automatically computed within the docker network
     IRODS_AUTHSCHEME: credentials
 
     IRODS_ENABLE_CONNECTOR: 1

@@ -4,13 +4,11 @@ iRODS file-system flask connector
 import logging
 from typing import Optional, Union
 
-from gssapi.raw import GSSError
 from irods import exception as iexceptions
 from restapi.connectors import Connector
 from restapi.env import Env
 from restapi.exceptions import ServiceUnavailable
 from restapi.utilities.logs import log
-from seadata.connectors.irods.certificates import Certificates
 from seadata.connectors.irods.client import IrodsPythonClient
 from seadata.connectors.irods.session import iRODSPickleSession as iRODSSession
 
@@ -19,7 +17,6 @@ irodslogger = logging.getLogger("irods")
 irodslogger.setLevel(logging.INFO)
 
 NORMAL_AUTH_SCHEME = "credentials"
-GSI_AUTH_SCHEME = "GSI"
 PAM_AUTH_SCHEME = "PAM"
 
 
@@ -38,7 +35,6 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
             NotImplementedError,
             ServiceUnavailable,
             AttributeError,
-            GSSError,
             FileNotFoundError,
         )
 
@@ -54,12 +50,7 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
         if session:
             user = session.email
         else:
-
-            admin = variables.get("be_admin", False)
-            if admin:
-                user = variables.get("default_admin_user")
-            else:
-                user = variables.get("user")
+            user = variables.get("user")
             password = variables.get("password")
 
         if user is None:
@@ -70,41 +61,6 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
         if session:
             # recover the serialized session
             obj = iRODSSession.deserialize(session.session)
-
-        elif authscheme == GSI_AUTH_SCHEME:
-
-            cert_pref = variables.get("certificates_prefix", "")
-            cert_name = variables.get("proxy_cert_name")
-
-            valid_cert = Certificates.globus_proxy(
-                proxy_file=variables.get("proxy_file"),
-                user_proxy=user,
-                cert_dir=variables.get("x509_cert_dir"),
-                myproxy_host=variables.get("myproxy_host"),
-                cert_name=f"{cert_pref}{cert_name}",
-                cert_pwd=variables.get("proxy_pass"),
-            )
-
-            if not valid_cert:
-                raise ServiceUnavailable("Invalid proxy settings")
-
-            # Server host certificate
-            # In case not set, recover from the shared dockerized certificates
-            if host_dn := variables.get("dn", None):
-                log.debug('Existing DN:\n"{}"', host_dn)
-            else:
-                host_dn = Certificates.get_dn_from_cert(
-                    certdir="host", certfilename="hostcert"
-                )
-
-            obj = iRODSSession(
-                user=user,
-                authentication_scheme=authscheme,
-                host=variables.get("host"),
-                port=variables.get("port"),
-                server_dn=host_dn,
-                zone=variables.get("zone"),
-            )
 
         elif authscheme == PAM_AUTH_SCHEME:
 
@@ -146,17 +102,15 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
         # NOTE: timeout has to be below 30s (http request timeout)
         obj.connection_timeout = Env.to_int(variables.get("timeout"), 15.0)
 
-        # Do a simple command to test this session
-        if not Env.to_bool(variables.get("only_check_proxy")):
-            try:
-                obj.users.get(user, user_zone=variables.get("zone"))
+        try:
+            obj.users.get(user, user_zone=variables.get("zone"))
 
-            except iexceptions.CAT_INVALID_AUTHENTICATION as e:
-                raise e
+        except iexceptions.CAT_INVALID_AUTHENTICATION as e:
+            raise e
 
-            # except iexceptions.PAM_AUTH_PASSWORD_FAILED as e:
-            except iexceptions.PAM_AUTH_PASSWORD_FAILED as e:
-                raise e
+        # except iexceptions.PAM_AUTH_PASSWORD_FAILED as e:
+        except iexceptions.PAM_AUTH_PASSWORD_FAILED as e:
+            raise e
 
         self.prc = obj
         # self.variables = variables
