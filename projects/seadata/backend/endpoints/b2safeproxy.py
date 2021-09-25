@@ -1,12 +1,12 @@
 from b2stage.connectors import irods
 from b2stage.connectors.irods.client import IrodsException, iexceptions
-from b2stage.endpoints.commons.b2access import B2accessUtilities
 from restapi import decorators
 from restapi.exceptions import Unauthorized
 from restapi.models import Schema, fields
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
+from seadata.endpoints import SeaDataEndpoint
 
 
 class Credentials(Schema):
@@ -18,7 +18,7 @@ class Credentials(Schema):
     authscheme = fields.Str(default="credentials")
 
 
-class B2safeProxy(B2accessUtilities):
+class B2safeProxy(SeaDataEndpoint):
     """Login to B2SAFE: directly."""
 
     _anonymous_user = "anonymous"

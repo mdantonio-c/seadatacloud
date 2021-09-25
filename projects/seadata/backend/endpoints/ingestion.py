@@ -4,15 +4,14 @@ Ingestion process submission to upload the SeaDataNet marine data.
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons import path
-from b2stage.endpoints.commons.endpoint import (
+from b2stage.endpoints import (
     BATCH_MISCONFIGURATION,
     ENABLED_BATCH,
     MISSING_BATCH,
     NOT_FILLED_BATCH,
     PARTIALLY_ENABLED_BATCH,
-    EudatEndpoint,
 )
+from b2stage.endpoints.commons import path
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
@@ -26,15 +25,14 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.endpoints import SeaDataEndpoint
-from seadata.endpoints.commons.cluster import INGESTION_DIR, MOUNTPOINT
+from seadata.endpoints import INGESTION_DIR, MOUNTPOINT, SeaDataEndpoint
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 ingestion_user = "RM"
 
 
-class IngestionEndpoint(Uploader, EudatEndpoint, SeaDataEndpoint):
+class IngestionEndpoint(SeaDataEndpoint, Uploader):
     """Create batch folder and upload zip files inside it"""
 
     labels = ["ingestion"]

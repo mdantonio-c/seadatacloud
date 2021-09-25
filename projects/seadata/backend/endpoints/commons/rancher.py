@@ -13,7 +13,7 @@ from typing import Any, List
 
 import gdapi
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import CONTAINERS_VARS
+from seadata.endpoints import CONTAINERS_VARS
 
 # PERPAGE_LIMIT = 5
 # PERPAGE_LIMIT = 50

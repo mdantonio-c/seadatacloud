@@ -9,7 +9,7 @@ https://github.com/EUDAT-B2STAGE/http-api/blob/master/docs/user/endpoints.md
 """
 
 from b2stage.endpoints.commons import path
-from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
+from b2stage.endpoints.commons.b2handle import PIDgenerator
 from restapi import decorators
 from restapi.exceptions import BadRequest
 from restapi.models import fields
@@ -18,10 +18,11 @@ from restapi.services.authentication import Role, User
 from restapi.services.download import Downloader
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
+from seadata.endpoints import SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import Metadata
 
 
-class PIDEndpoint(Uploader, Downloader, B2HandleEndpoint):
+class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
     """Handling PID on endpoint requests"""
 
     labels = ["pids"]
@@ -39,12 +40,14 @@ class PIDEndpoint(Uploader, Downloader, B2HandleEndpoint):
     def get(self, pid: str, user: User, download: bool = False) -> Response:
         """Get metadata or file from pid"""
 
-        b2handle_output = self.check_pid_content(pid)
+        pmaker = PIDgenerator()
+
+        b2handle_output = pmaker.check_pid_content(pid)
         if b2handle_output is None:
             raise BadRequest(f"PID {pid} not found")
 
         log.debug("PID {} verified", pid)
-        ipath = self.parse_pid_dataobject_path(b2handle_output)
+        ipath = pmaker.parse_pid_dataobject_path(b2handle_output)
         response = {
             "PID": pid,
             "verified": True,

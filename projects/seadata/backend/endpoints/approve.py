@@ -4,7 +4,6 @@ Move data from ingestion to production
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
@@ -18,7 +17,7 @@ from seadata.endpoints.commons.seadatacloud import Metadata as md
 
 #################
 # REST CLASS
-class MoveToProductionEndpoint(B2HandleEndpoint, SeaDataEndpoint):
+class MoveToProductionEndpoint(SeaDataEndpoint):
 
     labels = ["ingestion"]
 

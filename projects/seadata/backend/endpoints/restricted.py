@@ -1,7 +1,6 @@
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons.endpoint import EudatEndpoint
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import ServiceUnavailable
@@ -13,7 +12,7 @@ from seadata.endpoints import SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
-class Restricted(Uploader, EudatEndpoint, SeaDataEndpoint):
+class Restricted(SeaDataEndpoint, Uploader):
 
     labels = ["restricted"]
 

@@ -1,7 +1,6 @@
 import os
 
 import requests
-from b2stage.endpoints.commons.b2access import B2accessUtilities
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import NotFound, ServiceUnavailable
@@ -11,7 +10,7 @@ from restapi.utilities.logs import log
 from seadata.endpoints import SeaDataEndpoint
 
 
-class PidCache(SeaDataEndpoint, B2accessUtilities):
+class PidCache(SeaDataEndpoint):
 
     labels = ["helper"]
 

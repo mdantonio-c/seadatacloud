@@ -32,7 +32,8 @@ class Initializer:
                         "uuid": getUUID(),
                         "email": username,
                         "name": username,
-                        "password": "not-used",
+                        # password parameters will not be used because its a b2safe user
+                        "password": username,
                         "surname": "iCAT",
                         "authmethod": "irods",
                     }

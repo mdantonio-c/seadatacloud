@@ -7,24 +7,18 @@ import time
 from typing import Any
 
 import requests
+from b2stage.endpoints import BATCH_MISCONFIGURATION, MISSING_BATCH, NOT_FILLED_BATCH
 from b2stage.endpoints.commons import path
-from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
-from b2stage.endpoints.commons.endpoint import (
-    BATCH_MISCONFIGURATION,
-    MISSING_BATCH,
-    NOT_FILLED_BATCH,
-)
 from restapi import decorators
 from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints import SeaDataEndpoint
-from seadata.endpoints.commons.cluster import INGESTION_DIR, MOUNTPOINT
+from seadata.endpoints import INGESTION_DIR, MOUNTPOINT, SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
-class Resources(B2HandleEndpoint, SeaDataEndpoint):
+class Resources(SeaDataEndpoint):
 
     labels = ["ingestion"]
     depends_on = ["RESOURCES_PROJECT"]
@@ -170,7 +164,7 @@ class Resources(B2HandleEndpoint, SeaDataEndpoint):
         container_ingestion_path = self.get_ingestion_path_in_container()
 
         envs["BATCH_DIR_PATH"] = container_ingestion_path
-        from seadata.endpoints.commons.cluster import CONTAINERS_VARS
+        from seadata.endpoints import CONTAINERS_VARS
         from seadata.endpoints.commons.queue import QUEUE_VARS
 
         for key, value in QUEUE_VARS.items():

@@ -25,7 +25,6 @@ from typing import Any
 import requests
 from b2stage.connectors import irods
 from b2stage.endpoints.commons import API_URL, CURRENT_HTTPAPI_SERVER, path
-from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
@@ -33,8 +32,7 @@ from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints import SeaDataEndpoint
-from seadata.endpoints.commons.cluster import MOUNTPOINT, ORDERS_DIR
+from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, SeaDataEndpoint
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import ORDERS_ENDPOINT, EndpointsInputSchema
 
@@ -52,7 +50,7 @@ def get_order_zip_file_name(order_id, restricted=False, index=None):
 
 #################
 # REST CLASSES
-class DownloadBasketEndpoint(B2HandleEndpoint, SeaDataEndpoint):
+class DownloadBasketEndpoint(SeaDataEndpoint):
 
     labels = ["order"]
 
@@ -157,7 +155,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, SeaDataEndpoint):
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
 
-class BasketEndpoint(B2HandleEndpoint, SeaDataEndpoint):
+class BasketEndpoint(SeaDataEndpoint):
 
     labels = ["order"]
 
