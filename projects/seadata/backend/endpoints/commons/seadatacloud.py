@@ -116,6 +116,27 @@ class ErrorCodes:
     UNABLE_TO_SET_METADATA = ("4047", "Unable to set metadata to the file")
 
 
+class Metadata:
+
+    """{
+    "cdi_n_code": "1522222",
+    "format_n_code": "541555",
+    "data_format_l24": "CFPOINT",
+    "version": "1"
+    }"""
+
+    tid = "temp_id"
+    keys = [
+        "cdi_n_code",
+        "format_n_code",
+        "data_format_l24",
+        "version",
+        "batch_date",
+        "test_mode",
+    ]
+    max_size = 10
+
+
 class ImportManagerAPI:
 
     _uri = seadata_vars.get("api_im_url")

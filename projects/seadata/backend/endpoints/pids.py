@@ -18,27 +18,7 @@ from restapi.services.authentication import Role, User
 from restapi.services.download import Downloader
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-
-
-class Metadata:
-
-    """{
-    "cdi_n_code": "1522222",
-    "format_n_code": "541555",
-    "data_format_l24": "CFPOINT",
-    "version": "1"
-    }"""
-
-    tid = "temp_id"
-    keys = [
-        "cdi_n_code",
-        "format_n_code",
-        "data_format_l24",
-        "version",
-        "batch_date",
-        "test_mode",
-    ]
-    max_size = 10
+from seadata.endpoints.commons.seadatacloud import Metadata
 
 
 class PIDEndpoint(Uploader, Downloader, B2HandleEndpoint):

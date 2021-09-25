@@ -71,7 +71,7 @@ class B2safeProxy(B2accessUtilities):
         icom = irods.get_instance(user_session=user)
         icom.list()
 
-        return "validated"
+        return self.response("validated")
 
     @decorators.use_kwargs(Credentials)
     @decorators.endpoint(

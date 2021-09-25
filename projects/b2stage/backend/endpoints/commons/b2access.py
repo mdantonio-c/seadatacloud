@@ -5,6 +5,7 @@ import json
 import os
 from base64 import b64encode
 from datetime import datetime
+from typing import Dict, List, Optional
 
 import pytz
 import requests
@@ -15,7 +16,7 @@ from b2stage.endpoints.commons.oauth2clients import (
 )
 from flask import session
 from flask_oauthlib.client import OAuthResponse
-from restapi.rest.definition import EndpointResource
+from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
 from urllib3.exceptions import HTTPError
 
@@ -106,15 +107,13 @@ class B2accessUtilities(EndpointResource):
 
     def response(
         self,
-        content=None,
-        errors=None,
-        code=None,
-        headers=None,
-        head_method=False,
-        allow_html=False,
-        meta=None,
-        wrap_response=False,
-    ):
+        content: ResponseContent = None,
+        errors: Optional[List[str]] = None,
+        code: Optional[int] = None,
+        headers: Optional[Dict[str, str]] = None,
+        head_method: bool = False,
+        allow_html: bool = False,
+    ) -> Response:
 
         SEADATA_PROJECT = os.getenv("SEADATA_PROJECT", "0")
         # Locally apply the response wrapper, no longer available in the core
