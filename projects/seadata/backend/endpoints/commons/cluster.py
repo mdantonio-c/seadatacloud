@@ -1,9 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from restapi.env import Env
-from restapi.rest.definition import EndpointResource
+from restapi.rest.definition import EndpointResource, Response
 from seadata.endpoints.commons.seadatacloud import seadata_vars
 
 # from restapi.utilities.logs import log
@@ -181,13 +181,15 @@ class ClusterContainerEndpoint(EndpointResource):
         return self.get_irods_path(irods_client, ORDERS_COLL, order_id)
         # TODO: Move to other module, has nothing to do with Rancher cluster!
 
-    def return_async_id(self, request_id):
+    def return_async_id(self, request_id: str) -> Response:
         # dt = "20170712T15:33:11"
         dt = datetime.strftime(datetime.now(), "%Y%m%dT%H:%M:%S")
         return self.response({"request_id": request_id, "datetime": dt})
 
     @staticmethod
-    def get_container_name(batch_id, qc_name, qc_label=None):
+    def get_container_name(
+        batch_id: str, qc_name: str, qc_label: Optional[str] = None
+    ) -> str:
         qc_name = (
             qc_name.replace("_", "").replace("-", "").replace(":", "").replace(".", "")
         )
@@ -198,7 +200,7 @@ class ClusterContainerEndpoint(EndpointResource):
         return f"{batch_id}_{qc_label}_{qc_name}"
 
     @staticmethod
-    def get_container_image(qc_name, prefix=None):
+    def get_container_image(qc_name: str, prefix: Optional[str] = None) -> str:
         if prefix is None:
             prefix = DEFAULT_IMAGE_PREFIX
         return f"{prefix}/{qc_name}"
