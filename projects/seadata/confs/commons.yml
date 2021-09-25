@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   icat:
-    build: ${BASE_PROJECT_DIR}/builds/icat
+    build: ${PROJECT_DIR}/builds/icat
     image: ${COMPOSE_PROJECT_NAME}/icat:${RAPYDO_VERSION}
     environment:
       SEADATA_PROJECT: ${SEADATA_PROJECT}

@@ -1,15 +1,5 @@
 version: "3.8"
 
-volumes:
-  sharedcerts:
-    driver: local
-  etcconf:
-    driver: local
-  irodshome:
-    driver: local
-  irodsvar:
-    driver: local
-
 services:
   ###################################
   ###      iRODS iCAT server      ###
@@ -45,12 +35,6 @@ services:
     volumes:
       # Workaroud to make this works in extended mode
       - ${BASE_PROJECT_DIR}/scripts/subprojects.sh:/docker-entrypoint.d/subprojects.sh
-      # CERTIFICATES
-      - sharedcerts:/opt/certificates
-      # B2ACCESS certificates
-      - ${BASE_PROJECT_DIR}/builds/b2access_certificates:${B2ACCESS_CAS}
-      # EXTRA EUDAT scripts
-      - ${BASE_PROJECT_DIR}/builds/extra_b2access.sh:/docker-entrypoint.d/b2access.sh
 
     networks:
       default:
@@ -60,13 +44,6 @@ services:
   backend:
     build: ${PROJECT_DIR}/builds/backend
     image: ${REGISTRY_HOST}${COMPOSE_PROJECT_NAME}/backend:${RAPYDO_VERSION}
-    volumes:
-      # SHARED
-      - sharedcerts:/opt/certificates
-      # B2ACCESS dev certificates
-      - ${DATA_DIR}/certs:/usr/local/share/ca-certificates
-      # # mount irods code to develop patches
-      # - ${SUBMODULE_DIR}/prc/irods:/usr/local/lib/python3.6/dist-packages/irods
 
     environment:
       MAIN_LOGIN_ENABLE: 0 # this could disable the basic /auth/login method
@@ -74,10 +51,6 @@ services:
       MAIN_ENDPOINT: ${API_MAIN_ENDPOINT}
       PUBLIC_ENDPOINT: ${API_PUBLIC_ENDPOINT}
       ENABLE_PUBLIC_ENDPOINT: ${ENABLE_PUBLIC_ENDPOINT}
-      # app credentials to work inside the b2access environment
-      B2ACCESS_ENV: ${B2ACCESS_ENV}
-      B2ACCESS_APPNAME: ${B2ACCESS_ACCOUNT}
-      B2ACCESS_APPKEY: ${B2ACCESS_SECRET}
 
       # db access
       ALCHEMY_ENABLE: 1
