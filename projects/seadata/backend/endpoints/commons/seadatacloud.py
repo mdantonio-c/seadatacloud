@@ -2,9 +2,7 @@ import json
 from datetime import datetime
 from typing import Any, Mapping, Optional
 
-from b2stage.endpoints.commons import path
 from restapi.env import Env
-from restapi.exceptions import BadRequest
 from restapi.models import Schema, fields
 from restapi.utilities.logs import log
 from webargs import fields as webargs_fields
@@ -118,27 +116,6 @@ class ErrorCodes:
     UNABLE_TO_SET_METADATA = ("4047", "Unable to set metadata to the file")
 
 
-class Metadata:
-
-    """{
-    "cdi_n_code": "1522222",
-    "format_n_code": "541555",
-    "data_format_l24": "CFPOINT",
-    "version": "1"
-    }"""
-
-    tid = "temp_id"
-    keys = [
-        "cdi_n_code",
-        "format_n_code",
-        "data_format_l24",
-        "version",
-        "batch_date",
-        "test_mode",
-    ]
-    max_size = 10
-
-
 class ImportManagerAPI:
 
     _uri = seadata_vars.get("api_im_url")
@@ -199,30 +176,3 @@ class ImportManagerAPI:
                 self._uri,
             )
             return True
-
-
-# NOTE this function is outside the previous class, and self is passed as parameter
-def seadata_pid(self, pid):
-
-    b2handle_output = self.check_pid_content(pid)
-    if b2handle_output is None:
-        raise BadRequest(f"PID {pid} not found")
-
-    log.debug("PID {} verified", pid)
-    ipath = self.parse_pid_dataobject_path(b2handle_output)
-    response = {
-        "PID": pid,
-        "verified": True,
-        "metadata": {},
-        "temp_id": path.last_part(ipath),
-        "batch_id": path.last_part(path.dir_name(ipath)),
-    }
-
-    imain = self.get_main_irods_connection()
-    metadata, _ = imain.get_metadata(ipath)
-
-    for key, value in metadata.items():
-        if key in Metadata.keys:
-            response["metadata"][key] = value
-
-    return response

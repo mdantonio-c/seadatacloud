@@ -58,7 +58,7 @@ class TestApp(SeadataTests):
         assert r.status_code == 404
 
         error = "Batch 'my_batch_id' not enabled or you have no permissions"
-        assert self.get_seadata_response(r) == [error]
+        assert self.get_seadata_response(r) == error
 
         # POST - with no files to be downloaded
         data = self.get_input_data()

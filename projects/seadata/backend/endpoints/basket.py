@@ -113,7 +113,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log.debug("Checking zip irods path: {}", zip_ipath)
             if not imain.is_dataobject(zip_ipath):
                 log.error("File not found {}", zip_ipath)
-                raise NotFound({order_id: error})
+                raise NotFound(error)
 
             # TOFIX: we should use a database or cache to save this,
             # not irods metadata (known for low performances)
@@ -124,7 +124,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
             if iticket_code != encoded_code:
                 log.error("iticket code does not match {}", zip_ipath)
-                raise NotFound({order_id: error})
+                raise NotFound(error)
 
             # NOTE: very important!
             # use anonymous to get the session here
@@ -140,7 +140,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
             if not icom.test_ticket(zip_ipath):
                 log.error("Invalid iticket code {}", zip_ipath)
-                raise NotFound({order_id: "Invalid code"})
+                raise NotFound("Invalid download code")
 
             # tickets = imain.list_tickets()
             # print(tickets)
@@ -155,7 +155,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             }
             msg = prepare_message(self, json=json, log_string="end", status="sent")
             log_into_queue(self, msg)
-            return icom.stream_ticket(zip_ipath, headers=headers)
+            return icom.stream_ticket(zip_ipath, headers=headers)  # type: ignore
         except requests.exceptions.ReadTimeout:
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 

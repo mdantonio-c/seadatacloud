@@ -1,6 +1,8 @@
 """
 Move data from ingestion to production
 """
+from typing import Any
+
 import requests
 from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from restapi import decorators
@@ -27,7 +29,7 @@ class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
         summary="Approve files in a batch that are passing all qcs",
         responses={200: "Registration executed"},
     )
-    def post(self, batch_id: str, user: User, **json_input) -> Response:
+    def post(self, batch_id: str, user: User, **json_input: Any) -> Response:
 
         params = json_input.get("parameters", {})
         if not params:
