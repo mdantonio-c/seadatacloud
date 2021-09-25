@@ -4,7 +4,7 @@ import requests
 from b2stage.endpoints.commons.b2access import B2accessUtilities
 from restapi import decorators
 from restapi.connectors import celery
-from restapi.exceptions import RestApiException
+from restapi.exceptions import NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
@@ -42,7 +42,7 @@ class PidCache(ClusterContainerEndpoint, B2accessUtilities):
 
             collection = os.path.join(ipath, batch_id)
             if not imain.exists(collection):
-                raise RestApiException(f"Invalid batch id {batch_id}", status_code=404)
+                raise NotFound(f"Invalid batch id {batch_id}")
 
             c = celery.get_instance()
             task = c.celery_app.send_task("cache_batch_pids", args=[collection])
@@ -50,4 +50,4 @@ class PidCache(ClusterContainerEndpoint, B2accessUtilities):
 
             return self.return_async_id(task.id)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")

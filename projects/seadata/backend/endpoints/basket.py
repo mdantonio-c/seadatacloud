@@ -29,6 +29,7 @@ from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
@@ -103,7 +104,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             zip_file_name = self.get_filename_from_type(order_id, ftype)
 
             if zip_file_name is None:
-                return self.send_errors(f"Invalid file type {ftype}")
+                raise BadRequest(f"Invalid file type {ftype}")
 
             zip_ipath = path.join(order_path, zip_file_name, return_str=True)
 
@@ -112,7 +113,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log.debug("Checking zip irods path: {}", zip_ipath)
             if not imain.is_dataobject(zip_ipath):
                 log.error("File not found {}", zip_ipath)
-                return self.send_errors({order_id: error}, code=404)
+                raise NotFound({order_id: error})
 
             # TOFIX: we should use a database or cache to save this,
             # not irods metadata (known for low performances)
@@ -123,7 +124,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
             if iticket_code != encoded_code:
                 log.error("iticket code does not match {}", zip_ipath)
-                return self.send_errors({order_id: error}, code=404)
+                raise NotFound({order_id: error})
 
             # NOTE: very important!
             # use anonymous to get the session here
@@ -139,7 +140,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
             if not icom.test_ticket(zip_ipath):
                 log.error("Invalid iticket code {}", zip_ipath)
-                return self.send_errors({order_id: "Invalid code"}, code=404)
+                raise NotFound({order_id: "Invalid code"})
 
             # tickets = imain.list_tickets()
             # print(tickets)
@@ -156,7 +157,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log_into_queue(self, msg)
             return icom.stream_ticket(zip_ipath, headers=headers)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
 
 class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
@@ -181,8 +182,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             order_path = self.get_irods_order_path(imain, order_id)
             log.debug("Order path: {}", order_path)
             if not imain.is_collection(order_path):
-                error = f"Order '{order_id}': not existing"
-                return self.send_errors(error, code=404)
+                raise NotFound(f"Order '{order_id}': not existing")
 
             ##################
             ils = imain.list(order_path, detailed=True)
@@ -215,7 +215,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log_into_queue(self, msg)
             return self.response(response)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -226,25 +226,19 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
     )
     def post(self, user: User, **json_input: Any) -> Response:
 
-        ##################
         log.debug("POST request on orders")
         msg = prepare_message(self, json=json_input, log_string="start")
         log_into_queue(self, msg)
 
-        ##################
         params = json_input.get("parameters", {})
         if len(params) < 1:
-            error = "missing parameters"
-            return self.send_errors(error, code=400)
+            raise BadRequest("missing parameters")
 
-        ##################
         key = "order_number"
         order_id = params.get(key)
         if order_id is None:
-            error = f"Order ID '{key}': missing"
-            return self.send_errors(error, code=400)
-        else:
-            order_id = str(order_id)
+            raise BadRequest(f"Order ID '{key}': missing")
+        order_id = str(order_id)
 
         # ##################
         # Get filename from json input. But it has to follow a
@@ -302,7 +296,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
             return self.response({"status": "enabled"})
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     def no_slash_ticket(self, imain, path):
         """irods ticket for HTTP"""
@@ -391,7 +385,7 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
                 order_path = self.get_irods_order_path(imain, order_id)
                 log.debug("Order path: {}", order_path)
             except BaseException:
-                return self.send_errors("Order not found", code=404)
+                raise NotFound("Order not found")
 
             response = []
 
@@ -471,18 +465,17 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
                         response.append(info)
 
             if len(response) == 0:
-                error = f"Order '{order_id}' not found (or no permissions)"
-                return self.send_errors(error, code=404)
+                raise NotFound(f"Order '{order_id}' not found (or no permissions)")
 
             msg = prepare_message(self, log_string="end", status="enabled")
             log_into_queue(self, msg)
 
             return self.response(response)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
         except NetworkException as e:
             log.error(e)
-            return self.send_errors("Could not connect to B2SAFE host", code=503)
+            raise ServiceUnavailable("Could not connect to B2SAFE host")
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -507,4 +500,4 @@ class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")

@@ -5,6 +5,7 @@ import requests
 from b2stage.endpoints.commons.b2handle import B2HandleEndpoint
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
@@ -30,34 +31,31 @@ class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
 
         params = json_input.get("parameters", {})
         if not params:
-            return self.send_errors("parameters is empty", code=400)
+            raise BadRequest("parameters is empty")
 
         files = params.get("pids", [])
         if not files:
-            return self.send_errors("pids parameter is empty list", code=400)
+            raise BadRequest("pids parameter is empty list")
 
         filenames = []
         for data in files:
 
             if not isinstance(data, dict):
-                return self.send_errors(
+                raise BadRequest(
                     "File list contains at least one wrong entry",
-                    code=400,
                 )
 
             # print("TEST", data)
             for key in md.keys:  # + [md.tid]:
                 value = data.get(key)
                 if value is None:
-                    return self.send_errors(f"Missing parameter: {key}", code=400)
+                    raise BadRequest(f"Missing parameter: {key}")
 
                 value_len = len(value)
                 if value_len > md.max_size:
-                    return self.send_errors(
-                        f"Param '{key}': exceeds size {md.max_size}", code=400
-                    )
+                    raise BadRequest(f"Param '{key}': exceeds size {md.max_size}")
                 elif value_len < 1:
-                    return self.send_errors(f"Param '{key}': empty", code=400)
+                    raise BadRequest(f"Param '{key}': empty")
 
             filenames.append(data.get(md.tid))
 
@@ -69,9 +67,8 @@ class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             log.debug("Batch path: {}", batch_path)
 
             if not imain.is_collection(batch_path):
-                return self.send_errors(
+                raise NotFound(
                     f"Batch '{batch_id}' not enabled (or no permissions)",
-                    code=404,
                 )
 
             ################
@@ -97,4 +94,4 @@ class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             return self.return_async_id(task.id)
 
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")

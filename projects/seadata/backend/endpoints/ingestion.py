@@ -16,6 +16,12 @@ from b2stage.endpoints.commons.endpoint import (
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.exceptions import (
+    NotFound,
+    RestApiException,
+    ServerError,
+    ServiceUnavailable,
+)
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
@@ -63,9 +69,8 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             )
 
             if batch_status == MISSING_BATCH:
-                return self.send_errors(
+                raise NotFound(
                     f"Batch '{batch_id}' not enabled or you have no permissions",
-                    code=404,
                 )
 
             if batch_status == BATCH_MISCONFIGURATION:
@@ -74,10 +79,10 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
                     len(batch_files),
                     batch_path,
                 )
-                return self.send_errors(
+                raise RestApiException(
                     f"Misconfiguration for batch_id {batch_id}",
                     # Bad Resource
-                    code=410,
+                    status_code=410,
                 )
 
             data = {}
@@ -92,10 +97,10 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             data["files"] = batch_files
             return self.response(data)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
         except NetworkException as e:
             log.error(e)
-            return self.send_errors("Could not connect to B2SAFE host", code=503)
+            raise ServiceUnavailable("Could not connect to B2SAFE host")
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -155,13 +160,9 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
                         log.info("Created {}...", superdir)
                     path.create(local_path, directory=True, force=True)
                 except (FileNotFoundError, PermissionError) as e:
-                    err_msg = 'Could not create directory "{}" ({})'.format(
-                        local_path, e
-                    )
-                    log.critical(err_msg)
                     log.info("Removing collection from irods ({})", batch_path)
                     imain.remove(batch_path, recursive=True, force=True)
-                    return self.send_errors(err_msg, code=500)
+                    raise ServerError(f"Could not create directory {local_path} ({e})")
 
             else:
                 log.debug("Batch path already exists on filesytem")
@@ -184,7 +185,7 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -212,4 +213,4 @@ class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")

@@ -4,6 +4,7 @@ import requests
 from b2stage.endpoints.commons.endpoint import EudatEndpoint
 from restapi import decorators
 from restapi.connectors import celery
+from restapi.exceptions import ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
@@ -44,4 +45,4 @@ class Restricted(Uploader, EudatEndpoint, ClusterContainerEndpoint):
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")

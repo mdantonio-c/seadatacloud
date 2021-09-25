@@ -15,7 +15,7 @@ from b2stage.endpoints.commons.endpoint import (
     NOT_FILLED_BATCH,
 )
 from restapi import decorators
-from restapi.exceptions import Conflict
+from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
@@ -46,7 +46,7 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
         # resources = rancher.list()
         container = rancher.get_container_object(container_name)
         if container is None:
-            return self.send_errors("Quality check does not exist", code=404)
+            raise NotFound("Quality check does not exist")
 
         logs = rancher.recover_logs(container_name)
         # print("TEST", container_name, tmp)
@@ -102,16 +102,13 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
             )
 
             if batch_status == MISSING_BATCH:
-                return self.send_errors(
-                    f"Batch '{batch_id}' not found (or no permissions)",
-                    code=404,
-                )
+                raise NotFound(f"Batch '{batch_id}' not found (or no permissions)")
 
             if batch_status == NOT_FILLED_BATCH:
-                return self.send_errors(
+                raise RestApiException(
                     # Bad Resource
                     f"Batch '{batch_id}' not yet filled",
-                    code=410,
+                    status_code=410,
                 )
 
             if batch_status == BATCH_MISCONFIGURATION:
@@ -120,13 +117,13 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
                     len(batch_files),
                     batch_path,
                 )
-                return self.send_errors(
+                raise RestApiException(
                     f"Misconfiguration for batch_id {batch_id}",
                     # Bad Resource
-                    code=410,
+                    status_code=410,
                 )
         except requests.exceptions.ReadTimeout:
-            return self.send_errors("B2SAFE is temporarily unavailable", code=503)
+            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
         ###################
         # Parameters (and checks)
@@ -152,9 +149,8 @@ class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
             rancher = self.get_or_create_handle()
         except BaseException as e:
             log.critical(str(e))
-            return self.send_errors(
+            raise ServiceUnavailable(
                 "Cannot establish a connection with Rancher",
-                code=500,
             )
 
         container_name = self.get_container_name(batch_id, qc_name, rancher._qclabel)
