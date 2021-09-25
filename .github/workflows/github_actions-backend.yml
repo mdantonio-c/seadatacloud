@@ -6,17 +6,13 @@ on:
   #   - cron: "0 4 * * *"
   workflow_dispatch:
 
+env:
+  PROJECT: seadata
+
 jobs:
   backend-tests:
     runs-on: ubuntu-20.04
     timeout-minutes: 20
-
-    strategy:
-      matrix:
-        PROJECT: [b2stage, seadata]
-
-    env:
-      PROJECT: ${{ matrix.PROJECT }}
 
     steps:
       - uses: actions/checkout@v2
