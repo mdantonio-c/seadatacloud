@@ -23,8 +23,6 @@ variables:
   env:
     SEADATA_API_VERSION: 1.2.1.0001
 
-    # To be fixed
-    PYTHON_PATH: /usr/local/lib/python3.8/dist-packages
     # To be removed
     RUN_SCHEMATHESIS: 0
 
