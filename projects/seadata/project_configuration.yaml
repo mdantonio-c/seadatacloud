@@ -7,17 +7,27 @@ project:
   description: Processing data in SeaDataCloud project
   version: "1.2.1"
   rapydo: "2.1"
-  extends: b2stage
-  extends-from: projects
 
 tags:
   seadatacloud: endpoints related to the SeaDataCloud project
   ingestion: submission of files to be approved into the cloud
   order: request an order from the interface
+  # eudat: all endpoints associated to EUDAT services
+  # b2access: request/refresh authorization from B2ACCESS
+  # b2safe: proxy access to irods b2safe credentials
+  # registered: upload, download, list and delete objects
+  # pids: resolve and download data from EUDAT Persistent IDentifier
+  # publish: allow public access to data objects
+  # public: landing page
 
 variables:
   env:
     SEADATA_API_VERSION: 1.2.1.0001
+
+    # To be fixed
+    PYTHON_PATH: /usr/local/lib/python3.8/dist-packages
+    # To be removed
+    RUN_SCHEMATHESIS: 0
 
     LOG_LEVEL: INFO
     AUTH_SERVICE: sqlalchemy
@@ -30,11 +40,39 @@ variables:
     # 72 hours
     TOKEN_LONG_TTL: 259200
     TOKEN_SHORT_TTL: 259200
+    ALLOW_ACCESS_TOKEN_PARAMETER: 1
 
     ###############################
+    ACTIVATE_ICAT: 1
+
+    IRODS_USER: irods
+    IRODS_PASSWORD: chooseapasswordwisely # NOTE: must match ALCHEMY_PASSWORD
+    IRODS_ZONE: tempZone
+    IRODS_HOME: home
+    IRODS_GUEST_USER: guest # intended to work only with GSI
+    IRODS_DEFAULT_ADMIN_USER: rodsminer # intended to work only with GSI
+    # DN of your iRODS host with GSI plugin installed
+    IRODS_DN: # automatically computed within the docker network
+    IRODS_AUTHSCHEME: # to be auto-detected
+    # IRODS_AUTHSCHEME: credentials
+    # IRODS_AUTHSCHEME: GSI
+
+    IRODS_ENABLE_CONNECTOR: 1
+    IRODS_HOST: rodserver.dockerized.io
+    IRODS_PORT: 1247
+    IRODS_DB: ICAT
+
+    IRODS_EXPIRATION_TIME: 7200
+    IRODS_VERIFICATION_TIME: 900
     # anonymous user is used to download the orders via iticket
     IRODS_ANONYMOUS: 1
-    ACTIVATE_ICAT: 1
+
+    ###############################
+    ACTIVATE_POSTGRES: 1
+    ALCHEMY_USER: rods
+    ALCHEMY_PASSWORD: chooseapasswordwisely
+    ALCHEMY_DBS: "SQL_API ICAT"
+    ###############################
 
     SEADATA_PROJECT: 1
     SEADATA_EDMO_CODE:
@@ -93,3 +131,16 @@ variables:
     # Note that this variable has only effect in backend and celery containers
     # while QC containers uses an hard-code mount point (/usr/share)
     SEADATA_RESOURCES_MOUNTPOINT: /usr/share
+
+    # EUDAT
+
+    ###############################
+    ## Experimental features
+    ENABLE_PUBLIC_ENDPOINT: 0 # experimental endpoint, depending on anonymous
+
+    API_MAIN_ENDPOINT: registered
+    API_PUBLIC_ENDPOINT: public
+
+    # TO BE DEPRECATED
+    HANDLE_CREDENTIALS_INTERNAL_PATH: /opt/certificates/b2handle
+    HANDLE_BASE: "https://url.to.epic/handles/"
