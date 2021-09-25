@@ -34,7 +34,7 @@ services:
       IRODS_ANONYMOUS: ${IRODS_ANONYMOUS}
     volumes:
       # Workaroud to make this works in extended mode
-      - ${BASE_PROJECT_DIR}/scripts/subprojects.sh:/docker-entrypoint.d/subprojects.sh
+      - ${PROJECT_DIR}/scripts/subprojects.sh:/docker-entrypoint.d/subprojects.sh
 
     networks:
       default:

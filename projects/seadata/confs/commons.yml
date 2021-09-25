@@ -22,7 +22,7 @@ services:
       - ${REDIS_PORT}:${REDIS_PORT}
 
   backend:
-    build: ${BASE_PROJECT_DIR}/builds/backend
+    build: ${PROJECT_DIR}/builds/backend
     image: ${COMPOSE_PROJECT_NAME}/backend:${RAPYDO_VERSION}
     volumes:
       - ${RESOURCES_LOCALPATH}:${SEADATA_RESOURCES_MOUNTPOINT}
@@ -74,7 +74,7 @@ services:
   celery:
     restart: always
     build:
-      context: ${BASE_PROJECT_DIR}/builds/backend
+      context: ${PROJECT_DIR}/builds/backend
       args:
         RAPYDO_VERSION: ${RAPYDO_VERSION}
         CURRENT_UID: ${CURRENT_UID}
@@ -118,7 +118,7 @@ services:
   flower:
     restart: always
     build:
-      context: ${BASE_PROJECT_DIR}/builds/backend
+      context: ${PROJECT_DIR}/builds/backend
       args:
         RAPYDO_VERSION: ${RAPYDO_VERSION}
         CURRENT_UID: ${CURRENT_UID}
@@ -149,7 +149,7 @@ services:
   ingestion_celery:
     restart: always
     build:
-      context: ${BASE_PROJECT_DIR}/builds/backend
+      context: ${PROJECT_DIR}/builds/backend
       args:
         RAPYDO_VERSION: ${RAPYDO_VERSION}
         CURRENT_UID: ${CURRENT_UID}
@@ -255,7 +255,7 @@ services:
   restricted_celery:
     restart: always
     build:
-      context: ${BASE_PROJECT_DIR}/builds/backend
+      context: ${PROJECT_DIR}/builds/backend
       args:
         RAPYDO_VERSION: ${RAPYDO_VERSION}
         CURRENT_UID: ${CURRENT_UID}

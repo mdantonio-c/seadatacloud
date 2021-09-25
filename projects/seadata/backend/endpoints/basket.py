@@ -25,6 +25,7 @@ from typing import Any
 import requests
 from irods.exception import NetworkException
 from restapi import decorators
+from restapi.config import get_backend_url
 from restapi.connectors import celery
 from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
@@ -32,9 +33,9 @@ from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, SeaDataEndpoint
-from seadata.endpoints.commons import API_URL, CURRENT_HTTPAPI_SERVER, path
+from seadata.endpoints.commons import path
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
-from seadata.endpoints.commons.seadatacloud import ORDERS_ENDPOINT, EndpointsInputSchema
+from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 TMPDIR = "/tmp"
 
@@ -330,14 +331,9 @@ class BasketEndpoint(SeaDataEndpoint):
         else:
             ftype += str(index)
 
-        route = "{}{}/{}/{}/download/{}/c/{}".format(
-            CURRENT_HTTPAPI_SERVER,
-            API_URL,
-            ORDERS_ENDPOINT,
-            order_id,
-            ftype,
-            code,
-        )
+        host = get_backend_url()
+
+        url = f"{host}/api/orders/{order_id}/download/{ftype}/c/{code}"
 
         # If metadata already exists, remove them:
         # FIXME: verify if iticket_code is set and then invalidate it
@@ -345,7 +341,7 @@ class BasketEndpoint(SeaDataEndpoint):
         imain.remove_metadata(zip_ipath, "download")
         ##################
         # Set the url as Metadata in the irods file
-        imain.set_metadata(zip_ipath, download=route)
+        imain.set_metadata(zip_ipath, download=url)
 
         # TOFIX: we should add a database or cache to save this,
         # not irods metadata (known for low performances)
@@ -355,7 +351,7 @@ class BasketEndpoint(SeaDataEndpoint):
 
         return {
             "name": zip_file_name,
-            "url": route,
+            "url": url,
             "size": info.get("content_length", 0),
         }
 
