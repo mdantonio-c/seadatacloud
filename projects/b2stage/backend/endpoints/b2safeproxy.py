@@ -4,6 +4,8 @@ from b2stage.endpoints.commons.b2access import B2accessUtilities
 from restapi import decorators
 from restapi.exceptions import Unauthorized
 from restapi.models import Schema, fields
+from restapi.rest.definition import Response
+from restapi.services.authentication import User
 from restapi.utilities.logs import log
 
 
@@ -57,12 +59,11 @@ class B2safeProxy(B2accessUtilities):
         summary="Test a token obtained as a b2safe user",
         responses={200: "Token is valid"},
     )
-    def get(self):
+    def get(self, user: User) -> Response:
 
-        user = self.get_user()
         log.debug("Token user: {}", user)
 
-        if not user or not user.session:
+        if not user.session:
             raise Unauthorized("This user is not registered inside B2SAFE")
 
         log.info("Valid B2SAFE user: {}", user.uuid)
@@ -82,7 +83,9 @@ class B2safeProxy(B2accessUtilities):
             200: "B2safe credentials provided are valid",
         },
     )
-    def post(self, username, password, authscheme="credentials"):
+    def post(
+        self, username: str, password: str, authscheme: str = "credentials"
+    ) -> Response:
 
         # # token is an alias for password parmeter
         # if password is None:
