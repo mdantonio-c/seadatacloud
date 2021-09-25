@@ -4,18 +4,6 @@ MAINTAINER "Mattia D'Antonio <m.dantonio@cineca.it>"
 ARG RAPYDO_VERSION
 RUN test -n "$RAPYDO_VERSION"
 
-#########################################################
-# Python 3.9 is not working for gssapi 1.5.1, let's downgrade to python 3.8
-ENV PYTHON_VERSION="3.8"
-RUN ln -sf /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 \
-    && curl --silent https://bootstrap.pypa.io/get-pip.py --output get-pip.py \
-    && python3 get-pip.py \
-    && rm get-pip.py \
-    && apt-get update \
-    && apt-get install --yes python${PYTHON_VERSION}-dev \
-    && pip3 install --upgrade --no-cache-dir watchdog[watchmedo]==2.1.3 git+https://github.com/rapydo/http-api.git@$RAPYDO_VERSION
-#########################################################
-
 RUN apt-get update \
  && apt-get install -y zip libkrb5-dev unzip \
  && apt-get autoremove \
