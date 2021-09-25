@@ -3,7 +3,6 @@ Common functions for EUDAT endpoints
 """
 
 import os
-from pathlib import Path
 
 from b2stage.connectors import irods
 from b2stage.endpoints.commons import (
@@ -29,8 +28,8 @@ BATCH_MISCONFIGURATION = 4
 
 class EudatEndpoint(B2accessUtilities):
     """
-        Extend normal API to init
-        all necessary EUDAT B2STAGE API services
+    Extend normal API to init
+    all necessary EUDAT B2STAGE API services
     """
 
     _r = None  # main resources handler
@@ -55,7 +54,6 @@ class EudatEndpoint(B2accessUtilities):
         # NOTE: icom = irods commands handler (official python driver PRC)
 
         refreshed = False
-        external_user = None
 
         if internal_user is None:
             raise AttributeError("Missing user association to token")
@@ -68,17 +66,6 @@ class EudatEndpoint(B2accessUtilities):
 
             icom = self.irodsuser_from_b2safe(internal_user)
 
-        elif internal_user.authmethod == "b2access":
-            icom, external_user, refreshed = self.irodsuser_from_b2access(internal_user)
-            # icd and ipwd do not give error with wrong credentials...
-            # so the minimum command is checking the existence of home dir
-
-            home = icom.get_user_home()
-            if icom.is_collection(home):
-                log.debug("{} verified", home)
-            else:
-                log.warning("User home not found {}", home)
-
         else:
             log.error("Unknown credentials provided")
 
@@ -88,52 +75,10 @@ class EudatEndpoint(B2accessUtilities):
 
         return InitObj(
             username=user,
-            # extuser_object=external_user,
             icommands=icom,
-            # db_handler=sql,
             valid_credentials=True,
             refreshed=refreshed,
         )
-
-    def irodsuser_from_b2access(self, internal_user, refreshed=False):
-        external_user = self.oauth_from_local(internal_user)
-
-        try:
-            icom = irods.get_instance(
-                user=external_user.irodsuser,
-                password=external_user.token,
-                authscheme="PAM",
-            )
-
-            log.debug("Current b2access token is valid")
-        except iexceptions.PAM_AUTH_PASSWORD_FAILED:
-
-            if external_user.refresh_token is None:
-                log.warning("Missing refresh token cannot request for a new token")
-                raise RestApiException("Invalid PAM credentials")
-            else:
-
-                if refreshed:
-                    log.info("B2access token already refreshed, cannot request new one")
-                    raise RestApiException("Invalid PAM credentials")
-                log.info("B2access token is no longer valid, requesting new token")
-
-                b2access = self.create_b2access_client(self.auth, decorate=True)
-                access_token = self.refresh_b2access_token(
-                    self.auth,
-                    external_user.email,
-                    b2access,
-                    external_user.refresh_token,
-                )
-
-                if access_token is not None:
-                    return self.irodsuser_from_b2access(internal_user, refreshed=True)
-                raise RestApiException("Failed to refresh b2access token")
-
-        except BaseException as e:
-            raise RestApiException("Unexpected error: {} ({})".format(type(e), str(e)))
-
-        return icom, external_user, refreshed
 
     def irodsuser_from_b2safe(self, user):
 
@@ -174,7 +119,7 @@ class EudatEndpoint(B2accessUtilities):
         return icom
 
     def httpapi_location(self, ipath, api_path=None, remove_suffix=None):
-        """ URI for retrieving with GET method """
+        """URI for retrieving with GET method"""
 
         # TODO: check and clean 'remove_suffix parameter'
 
@@ -197,7 +142,9 @@ class EudatEndpoint(B2accessUtilities):
 
     def b2safe_location(self, ipath):
         return "{}://{}/{}".format(
-            IRODS_PROTOCOL, CURRENT_B2SAFE_SERVER, ipath.strip(self._path_separator),
+            IRODS_PROTOCOL,
+            CURRENT_B2SAFE_SERVER,
+            ipath.strip(self._path_separator),
         )
 
     def fix_location(self, location):
@@ -231,7 +178,7 @@ class EudatEndpoint(B2accessUtilities):
         return os.path.basename(os.path.normpath(path))
 
     def complete_path(self, path, filename=None):
-        """ Make sure you have a path with no trailing slash """
+        """Make sure you have a path with no trailing slash"""
         path = path.rstrip("/")
         if filename is not None:
             path += "/" + filename.rstrip("/")
@@ -248,134 +195,6 @@ class EudatEndpoint(B2accessUtilities):
             return path.rstrip(self._path_separator)
 
         return None
-
-    def download_object(self, r, path, head=False):
-        icom = r.icommands
-        username = r.username
-        path = self.parse_path(path)
-        is_collection = icom.is_collection(path)
-        if is_collection:
-            return self.send_errors(
-                "Collection: recursive download is not allowed", head_method=head
-            )
-
-        if head:
-            if icom.readable(path):
-                return self.response("", code=200, head_method=head)
-            else:
-                return self.send_errors(code=404, head_method=head)
-
-        filename = self.filename_from_path(path)
-        abs_file = self.absolute_upload_file(filename, Path(username))
-
-        # TODO: decide if we want to use a cache when streaming
-        # what about nginx caching?
-
-        # Make sure you remove any cached version to get a fresh obj
-        try:
-            os.remove(abs_file)
-        except BaseException:
-            pass
-        # Execute icommand (transfer data to cache)
-        icom.open(path, abs_file)
-        # Download the file from local fs
-        filecontent = self.download(filename, subfolder=username)
-        # Remove local file
-        os.remove(abs_file)
-        # Stream file content
-        return filecontent
-
-    def list_objects(self, icom, path, is_collection, location, public=False):
-        """ DATA LISTING """
-
-        from b2stage.connectors.irods.client import IrodsException
-        from b2stage.endpoints.commons import CURRENT_MAIN_ENDPOINT, PUBLIC_ENDPOINT
-
-        data = {}
-        EMPTY_RESPONSE = {}
-
-        #####################
-        # DIRECTORY
-        if is_collection:
-            collection = path
-            data = icom.list(path=collection)
-            if len(data) < 1:
-                data = EMPTY_RESPONSE
-            # Print content list if it's a collection
-        #####################
-        # FILE (or not existing)
-        else:
-            collection = icom.get_collection_from_path(path)
-            current_filename = path[len(collection) + 1 :]
-
-            from contextlib import suppress
-
-            with suppress(IrodsException):
-                filelist = icom.list(path=collection)
-                data = EMPTY_RESPONSE
-                for filename, metadata in filelist.items():
-                    if filename == current_filename:
-                        data[filename] = metadata
-
-            # # Print file details/sys metadata if it's a specific file
-            # data = icom.meta_sys_list(path)
-
-            # if a path that does not exist
-            if len(data) < 1:
-                return self.send_errors(
-                    f"Path does not exists or you don't have privileges: {path}",
-                    code=404,
-                )
-
-        # Set the right context to each element
-        response = []
-        for filename, metadata in data.items():
-
-            # Get iRODS checksum
-            file_path = os.path.join(collection, filename)
-            try:
-                obj = icom.get_dataobject(file_path)
-                checksum = obj.checksum
-            except IrodsException:
-                checksum = None
-
-            # Get B2SAFE metadata
-            out = {}
-            try:
-                out, _ = icom.get_metadata(file_path)
-            except IrodsException:
-                pass
-
-            metadata["checksum"] = checksum
-            metadata["PID"] = out.get("PID")
-
-            # Shell we add B2SAFE metadata only if present?
-            metadata["EUDAT/FIXED_CONTENT"] = out.get("EUDAT/FIXED_CONTENT")
-            metadata["EUDAT/REPLICA"] = out.get("EUDAT/REPLICA")
-            metadata["EUDAT/FIO"] = out.get("EUDAT/FIO")
-            metadata["EUDAT/ROR"] = out.get("EUDAT/ROR")
-            metadata["EUDAT/PARENT"] = out.get("EUDAT/PARENT")
-
-            metadata.pop("path")
-            if public:
-                api_path = PUBLIC_ENDPOINT
-            else:
-                api_path = CURRENT_MAIN_ENDPOINT
-            content = {
-                "metadata": metadata,
-                metadata["object_type"]: filename,
-                "path": collection,
-                "location": self.b2safe_location(collection),
-                "link": self.httpapi_location(
-                    icom.get_absolute_path(filename, root=collection),
-                    api_path=api_path,
-                    remove_suffix=location,
-                ),
-            }
-
-            response.append({filename: content})
-
-        return response
 
     def get_batch_status(self, imain, irods_path, local_path):
 

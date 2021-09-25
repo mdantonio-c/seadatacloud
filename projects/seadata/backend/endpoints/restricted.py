@@ -9,11 +9,11 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
+from seadata.endpoints import SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
-class Restricted(Uploader, EudatEndpoint, ClusterContainerEndpoint):
+class Restricted(Uploader, EudatEndpoint, SeaDataEndpoint):
 
     labels = ["restricted"]
 

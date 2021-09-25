@@ -11,14 +11,14 @@ from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
+from seadata.endpoints import SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 from seadata.endpoints.commons.seadatacloud import Metadata as md
 
 
 #################
 # REST CLASS
-class MoveToProductionEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
+class MoveToProductionEndpoint(B2HandleEndpoint, SeaDataEndpoint):
 
     labels = ["ingestion"]
 

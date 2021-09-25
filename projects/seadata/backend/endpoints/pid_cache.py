@@ -8,10 +8,10 @@ from restapi.exceptions import NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
+from seadata.endpoints import SeaDataEndpoint
 
 
-class PidCache(ClusterContainerEndpoint, B2accessUtilities):
+class PidCache(SeaDataEndpoint, B2accessUtilities):
 
     labels = ["helper"]
 

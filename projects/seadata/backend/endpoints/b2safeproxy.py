@@ -100,12 +100,6 @@ class B2safeProxy(B2accessUtilities):
         if not username or not password:
             raise Unauthorized("Missing username or password")
 
-        if authscheme.upper() == "OPENID":
-            authscheme = "PAM"
-            imain = self.get_main_irods_connection()
-
-            username = self.get_irods_user_from_b2access(imain, username)
-
         # we verify that irods connects with this credentials
         irods = self.get_and_verify_irods_session(
             user=username,

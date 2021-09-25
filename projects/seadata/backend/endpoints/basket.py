@@ -33,11 +33,8 @@ from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import (
-    MOUNTPOINT,
-    ORDERS_DIR,
-    ClusterContainerEndpoint,
-)
+from seadata.endpoints import SeaDataEndpoint
+from seadata.endpoints.commons.cluster import MOUNTPOINT, ORDERS_DIR
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import ORDERS_ENDPOINT, EndpointsInputSchema
 
@@ -55,7 +52,7 @@ def get_order_zip_file_name(order_id, restricted=False, index=None):
 
 #################
 # REST CLASSES
-class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
+class DownloadBasketEndpoint(B2HandleEndpoint, SeaDataEndpoint):
 
     labels = ["order"]
 
@@ -160,7 +157,7 @@ class DownloadBasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
 
-class BasketEndpoint(B2HandleEndpoint, ClusterContainerEndpoint):
+class BasketEndpoint(B2HandleEndpoint, SeaDataEndpoint):
 
     labels = ["order"]
 

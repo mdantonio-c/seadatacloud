@@ -26,18 +26,15 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import (
-    INGESTION_DIR,
-    MOUNTPOINT,
-    ClusterContainerEndpoint,
-)
+from seadata.endpoints import SeaDataEndpoint
+from seadata.endpoints.commons.cluster import INGESTION_DIR, MOUNTPOINT
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 ingestion_user = "RM"
 
 
-class IngestionEndpoint(Uploader, EudatEndpoint, ClusterContainerEndpoint):
+class IngestionEndpoint(Uploader, EudatEndpoint, SeaDataEndpoint):
     """Create batch folder and upload zip files inside it"""
 
     labels = ["ingestion"]

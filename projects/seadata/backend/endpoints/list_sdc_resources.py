@@ -8,11 +8,11 @@ from restapi.exceptions import ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import ClusterContainerEndpoint
+from seadata.endpoints import SeaDataEndpoint
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
-class ListResources(EudatEndpoint, ClusterContainerEndpoint):
+class ListResources(EudatEndpoint, SeaDataEndpoint):
 
     labels = ["helper"]
 

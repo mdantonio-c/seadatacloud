@@ -19,15 +19,12 @@ from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnav
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.endpoints.commons.cluster import (
-    INGESTION_DIR,
-    MOUNTPOINT,
-    ClusterContainerEndpoint,
-)
+from seadata.endpoints import SeaDataEndpoint
+from seadata.endpoints.commons.cluster import INGESTION_DIR, MOUNTPOINT
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
-class Resources(B2HandleEndpoint, ClusterContainerEndpoint):
+class Resources(B2HandleEndpoint, SeaDataEndpoint):
 
     labels = ["ingestion"]
     depends_on = ["RESOURCES_PROJECT"]
