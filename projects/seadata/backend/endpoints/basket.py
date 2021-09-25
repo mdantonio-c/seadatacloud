@@ -23,7 +23,6 @@ from pathlib import Path
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons import API_URL, CURRENT_HTTPAPI_SERVER, path
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
@@ -33,6 +32,7 @@ from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, SeaDataEndpoint
+from seadata.endpoints.commons import API_URL, CURRENT_HTTPAPI_SERVER, path
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import ORDERS_ENDPOINT, EndpointsInputSchema
 

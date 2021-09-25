@@ -1,20 +1,10 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pytz
-from b2stage.endpoints.commons import (
-    CURRENT_B2SAFE_SERVER,
-    CURRENT_HTTPAPI_SERVER,
-    HTTP_PROTOCOL,
-    IRODS_PROTOCOL,
-    IRODS_VARS,
-    PRODUCTION,
-)
-from irods import exception as iexceptions
 from restapi.env import Env
-from restapi.exceptions import RestApiException, Unauthorized
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
 from seadata.connectors import irods
@@ -228,7 +218,9 @@ class SeaDataEndpoint(EndpointResource):
             prefix = DEFAULT_IMAGE_PREFIX
         return f"{prefix}/{qc_name}"
 
-    def get_batch_status(self, imain, irods_path, local_path):
+    def get_batch_status(
+        self, imain: irods.IrodsPythonExt, irods_path: str, local_path: str
+    ) -> Tuple[int, List[str]]:
 
         files = {}
         if not imain.is_collection(irods_path):
