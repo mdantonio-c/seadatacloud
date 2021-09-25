@@ -8,6 +8,7 @@ https://github.com/EUDAT-B2STAGE/http-api/blob/master/docs/user/endpoints.md
 
 """
 
+from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from b2stage.endpoints.commons.b2handle import PIDgenerator
 from restapi import decorators
@@ -56,7 +57,7 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
             "batch_id": path.last_part(path.dir_name(ipath)),
         }
 
-        imain = self.get_main_irods_connection()
+        imain = irods.get_instance()
         metadata, _ = imain.get_metadata(ipath)
 
         for key, value in metadata.items():

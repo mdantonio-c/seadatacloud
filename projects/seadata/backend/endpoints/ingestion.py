@@ -4,6 +4,7 @@ Ingestion process submission to upload the SeaDataNet marine data.
 from typing import Any
 
 import requests
+from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from irods.exception import NetworkException
 from restapi import decorators
@@ -54,7 +55,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
         log.info("Batch request: {}", batch_id)
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
 
             batch_path = self.get_irods_batch_path(imain, batch_id)
             local_path = path.join(MOUNTPOINT, INGESTION_DIR, batch_id)
@@ -111,9 +112,8 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
     )
     def post(self, batch_id: str, user: User, **json_input: Any) -> Response:
 
-        obj = self.init_endpoint()
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
 
             batch_path = self.get_irods_batch_path(imain, batch_id)
             log.info("Batch irods path: {}", batch_path)
@@ -138,7 +138,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             # Create the collection and set permissions in irods
             if not imain.is_collection(batch_path):
 
-                imain.create_collection_inheritable(batch_path, obj.username)
+                imain.create_collection_inheritable(batch_path, user.email)
             else:
                 log.warning("Irods batch collection {} already exists", batch_path)
 
@@ -194,7 +194,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
     def delete(self, user: User, **json_input: Any) -> Response:
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             batch_path = self.get_irods_batch_path(imain)
             local_batch_path = str(path.join(MOUNTPOINT, INGESTION_DIR))
             log.debug("Batch collection: {}", batch_path)

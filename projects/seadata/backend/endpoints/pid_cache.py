@@ -1,6 +1,7 @@
 import os
 
 import requests
+from b2stage.connectors import irods
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import NotFound, ServiceUnavailable
@@ -36,7 +37,7 @@ class PidCache(SeaDataEndpoint):
     def post(self, batch_id: str, user: User) -> Response:
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             ipath = self.get_irods_production_path(imain)
 
             collection = os.path.join(ipath, batch_id)

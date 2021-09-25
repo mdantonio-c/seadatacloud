@@ -93,7 +93,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
         # log.info("DOWNLOAD DEBUG 1: {} (code '{}')", order_id, code)
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain, order_id)
 
             zip_file_name = self.get_filename_from_type(order_id, ftype)
@@ -129,8 +129,6 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
                 password="null",
                 authscheme="credentials",
             )
-            # obj = self.init_endpoint()
-            # icom = obj.icommands
             icom.ticket_supply(code)
 
             if not icom.test_ticket(zip_ipath):
@@ -173,7 +171,7 @@ class BasketEndpoint(SeaDataEndpoint):
         log_into_queue(self, msg)
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain, order_id)
             log.debug("Order path: {}", order_path)
             if not imain.is_collection(order_path):
@@ -257,13 +255,12 @@ class BasketEndpoint(SeaDataEndpoint):
         # Create the path
         log.info("Order request: {}", order_id)
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain, order_id)
             log.debug("Order path: {}", order_path)
             if not imain.is_collection(order_path):
-                obj = self.init_endpoint()
                 # Create the path and set permissions
-                imain.create_collection_inheritable(order_path, obj.username)
+                imain.create_collection_inheritable(order_path, user.email)
 
             ##################
             # Does the zip already exists?
@@ -375,7 +372,7 @@ class BasketEndpoint(SeaDataEndpoint):
         log_into_queue(self, msg)
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             try:
                 order_path = self.get_irods_order_path(imain, order_id)
                 log.debug("Order path: {}", order_path)
@@ -482,7 +479,7 @@ class BasketEndpoint(SeaDataEndpoint):
     def delete(self, user: User, **json_input: Any) -> Response:
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain)
             local_order_path = str(path.join(MOUNTPOINT, ORDERS_DIR))
             log.debug("Order collection: {}", order_path)

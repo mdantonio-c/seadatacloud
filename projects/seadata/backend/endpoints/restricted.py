@@ -1,6 +1,7 @@
 from typing import Any
 
 import requests
+from b2stage.connectors import irods
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import ServiceUnavailable
@@ -27,12 +28,11 @@ class Restricted(SeaDataEndpoint, Uploader):
     def post(self, order_id: str, user: User, **json_input: Any) -> Response:
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain, order_id)
             if not imain.is_collection(order_path):
-                obj = self.init_endpoint()
                 # Create the path and set permissions
-                imain.create_collection_inheritable(order_path, obj.username)
+                imain.create_collection_inheritable(order_path, user.email)
 
             c = celery.get_instance()
             task = c.celery_app.send_task(

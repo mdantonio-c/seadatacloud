@@ -4,6 +4,7 @@ Move data from ingestion to production
 from typing import Any
 
 import requests
+from b2stage.connectors import irods
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
@@ -63,7 +64,7 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
         ################
         # 1. check if irods path exists
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             batch_path = self.get_irods_batch_path(imain, batch_id)
             log.debug("Batch path: {}", batch_path)
 
@@ -76,8 +77,7 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
             # 2. make batch_id directory in production if not existing
             prod_path = self.get_irods_production_path(imain, batch_id)
             log.debug("Production path: {}", prod_path)
-            obj = self.init_endpoint()
-            imain.create_collection_inheritable(prod_path, obj.username)
+            imain.create_collection_inheritable(prod_path, user.email)
 
             ################
             # ASYNC

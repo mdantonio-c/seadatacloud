@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 import requests
+from b2stage.connectors import irods
 from b2stage.endpoints.commons import path
 from restapi import decorators
 from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
@@ -89,7 +90,7 @@ class Resources(SeaDataEndpoint):
         ###########################
         # get name from batch
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             batch_path = self.get_irods_batch_path(imain, batch_id)
             local_path = path.join(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)

@@ -1,6 +1,7 @@
 from typing import Any
 
 import requests
+from b2stage.connectors import irods
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import ServiceUnavailable
@@ -25,7 +26,7 @@ class ListResources(SeaDataEndpoint):
     def post(self, user: User, **json_input: Any) -> Response:
 
         try:
-            imain = self.get_main_irods_connection()
+            imain = irods.get_instance()
             c = celery.get_instance()
             task = c.celery_app.send_task(
                 "list_resources",
