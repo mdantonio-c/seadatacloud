@@ -4,7 +4,6 @@ Ingestion process submission to upload the SeaDataNet marine data.
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons import path
 from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
@@ -29,6 +28,7 @@ from seadata.endpoints import (
     PARTIALLY_ENABLED_BATCH,
     SeaDataEndpoint,
 )
+from seadata.endpoints.commons import path
 from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 

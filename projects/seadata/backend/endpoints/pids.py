@@ -8,8 +8,6 @@ https://github.com/EUDAT-B2STAGE/http-api/blob/master/docs/user/endpoints.md
 
 """
 
-from b2stage.endpoints.commons import path
-from b2stage.endpoints.commons.b2handle import PIDgenerator
 from restapi import decorators
 from restapi.exceptions import BadRequest
 from restapi.models import fields
@@ -19,7 +17,9 @@ from restapi.services.download import Downloader
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
+from seadata.connectors.irods.b2handle import PIDgenerator
 from seadata.endpoints import SeaDataEndpoint
+from seadata.endpoints.commons import path
 from seadata.endpoints.commons.seadatacloud import Metadata
 
 

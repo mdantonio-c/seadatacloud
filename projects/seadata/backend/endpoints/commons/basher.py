@@ -56,7 +56,7 @@ def current_os_user():
 
 
 class BashCommands:
-    """ Wrapper for execution of commands in a bash shell """
+    """Wrapper for execution of commands in a bash shell"""
 
     _shell = None
 

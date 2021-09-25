@@ -6,14 +6,14 @@ from shutil import rmtree
 from typing import Dict, List
 
 import requests
-from b2stage.endpoints.commons import path
-from b2stage.endpoints.commons.basher import BashCommands
 from plumbum.commands.processes import ProcessExecutionError
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods.client import IrodsException
+from seadata.endpoints.commons import path
+from seadata.endpoints.commons.basher import BashCommands
 from seadata.endpoints.commons.seadatacloud import ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
 

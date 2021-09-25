@@ -7,7 +7,6 @@ import time
 from typing import Any
 
 import requests
-from b2stage.endpoints.commons import path
 from restapi import decorators
 from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
 from restapi.rest.definition import Response
@@ -22,6 +21,7 @@ from seadata.endpoints import (
     NOT_FILLED_BATCH,
     SeaDataEndpoint,
 )
+from seadata.endpoints.commons import path
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 

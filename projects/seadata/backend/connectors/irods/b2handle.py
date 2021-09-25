@@ -10,8 +10,8 @@ try:
     from b2handle.handleclient import EUDATHandleClient as b2handle
 except BaseException:
     b2handle, credentials, handleexceptions = [None] * 3
-from b2stage.endpoints.commons import path
 from restapi.utilities.logs import log
+from seadata.endpoints.commons import path
 
 
 class PIDgenerator:
