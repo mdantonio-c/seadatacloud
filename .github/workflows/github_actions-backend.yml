@@ -26,7 +26,8 @@ jobs:
       - name: Run Pytest
         run: |
 
-          rapydo --testing -e ACTIVATE_ICAT=1 init --force
+          IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
+          rapydo --testing -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_INGESTION}
           sudo mkdir -p /nfs/share/batches
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_ORDERS}
@@ -54,7 +55,8 @@ jobs:
         run: |
           rapydo remove --all
           docker volume rm seadata_sqldata
-          rapydo --prod -e ACTIVATE_ICAT=1 init --force
+          IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
+          rapydo --prod -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           rapydo pull --quiet
           rapydo ssl --volatile
           rapydo start

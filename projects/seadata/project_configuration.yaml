@@ -42,6 +42,7 @@ variables:
     ACTIVATE_ICAT: 0
 
     IRODS_USER: irods
+    IRODS_PASSWORD: "**PLACEHOLDER**"
     IRODS_ZONE: tempZone
     IRODS_HOME: home
     IRODS_AUTHSCHEME: credentials
