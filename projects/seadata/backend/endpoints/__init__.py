@@ -83,7 +83,7 @@ class SeaDataEndpoint(EndpointResource):
         """
 
         # Import here to prevent circular imports
-        from seadata.endpoints.commons.rancher import Rancher
+        from seadata.connetors.rancher import Rancher
 
         params = self.load_credentials()
         return Rancher(**params)
