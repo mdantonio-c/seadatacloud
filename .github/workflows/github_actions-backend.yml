@@ -53,6 +53,7 @@ jobs:
       - name: Production mode
         run: |
           rapydo remove --all
+          docker volume rm seadata_sqldata
           rapydo --prod -e ACTIVATE_ICAT=1 init --force
           rapydo pull --quiet
           rapydo ssl --volatile
