@@ -37,7 +37,8 @@ project_configuration:
       IRODS_HOST: your_irods_host
       IRODS_ZONE: your_irods_zone
       IRODS_USER: your_irods_admin_username
-      IRODS_PASSWORD: your_irods_admin_password
+      ALCHEMY_PASSWORD: your_irods_admin_password
+      # IRODS_PASSWORD: your_irods_admin_password
       # credentials = user defined in b2safe
       # Other allowed values: PAM, GSI
       IRODS_AUTHSCHEME: credentials

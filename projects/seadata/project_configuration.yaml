@@ -42,7 +42,6 @@ variables:
     ACTIVATE_ICAT: 0
 
     IRODS_USER: irods
-    IRODS_PASSWORD: chooseapasswordwisely # NOTE: must match ALCHEMY_PASSWORD
     IRODS_ZONE: tempZone
     IRODS_HOME: home
     IRODS_AUTHSCHEME: credentials
@@ -60,7 +59,6 @@ variables:
     ###############################
     ACTIVATE_POSTGRES: 1
     ALCHEMY_USER: rods
-    ALCHEMY_PASSWORD: chooseapasswordwisely
     ALCHEMY_DBS: "SQL_API ICAT"
     ###############################
 
