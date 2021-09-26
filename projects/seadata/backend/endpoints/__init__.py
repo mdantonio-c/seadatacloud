@@ -146,9 +146,6 @@ class SeaDataEndpoint(EndpointResource):
         inside irods.
 
         Note: Helper, only used inside this file.
-        Note: The irods_client is of class
-        IrodsPythonClient, defined in module
-        rapydo/http-api/restapi/connectors/irods/client
         """
         suffix_path = Path(mypath)
         if suffix:
