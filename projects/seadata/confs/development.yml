@@ -5,7 +5,3 @@ services:
     environment:
       # trick for unittests
       MAIN_LOGIN_ENABLE: 1
-
-  icat:
-    environment:
-      ACTIVATE: 1

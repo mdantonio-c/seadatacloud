@@ -39,8 +39,7 @@ variables:
     TOKEN_SHORT_TTL: 259200
     ALLOW_ACCESS_TOKEN_PARAMETER: 1
 
-    ###############################
-    ACTIVATE_ICAT: 1
+    ACTIVATE_ICAT: 0
 
     IRODS_USER: irods
     IRODS_PASSWORD: chooseapasswordwisely # NOTE: must match ALCHEMY_PASSWORD
