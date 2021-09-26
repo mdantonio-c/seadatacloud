@@ -12,7 +12,7 @@ from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
-from seadata.connectors.irods.client import IrodsException
+from seadata.connectors.irods import IrodsException
 from seadata.endpoints import ErrorCodes
 from seadata.endpoints.commons import path
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error

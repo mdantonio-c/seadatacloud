@@ -4,7 +4,7 @@ from restapi.models import Schema, fields
 from restapi.rest.definition import Response
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.connectors.irods.client import IrodsException, iexceptions
+from seadata.connectors.irods import IrodsException, iexceptions
 from seadata.endpoints import SeaDataEndpoint
 
 
@@ -24,16 +24,17 @@ class B2safeProxy(SeaDataEndpoint):
 
     labels = ["eudat", "b2safe", "authentication"]
 
-    def get_and_verify_irods_session(self, user, password, authscheme):
-
-        obj = None
+    def get_and_verify_irods_session(
+        self, user: str, password: str, authscheme: str
+    ) -> bool:
 
         try:
-            obj = irods.get_instance(
+            irods.get_instance(
                 user=user,
                 password=password,
                 authscheme=authscheme,
             )
+            return True
 
         except iexceptions.CAT_INVALID_USER:
             log.warning("Invalid user: {}", user)
@@ -50,7 +51,7 @@ class B2safeProxy(SeaDataEndpoint):
                 error += str(e)
             raise IrodsException(error)
 
-        return obj
+        return False
 
     @decorators.use_kwargs(Credentials)
     @decorators.endpoint(
@@ -66,10 +67,6 @@ class B2safeProxy(SeaDataEndpoint):
         self, username: str, password: str, authscheme: str = "credentials"
     ) -> Response:
 
-        # # token is an alias for password parmeter
-        # if password is None:
-        #     password = jargs.pop('token', None)
-
         if authscheme.upper() == "PAM":
             authscheme = "PAM"
 
@@ -79,13 +76,12 @@ class B2safeProxy(SeaDataEndpoint):
         if not username or not password:
             raise Unauthorized("Missing username or password")
 
-        # we verify that irods connects with this credentials
-        irods = self.get_and_verify_irods_session(
+        valid = self.get_and_verify_irods_session(
             user=username,
             password=password,
             authscheme=authscheme,
         )
-        if irods is None:
+        if not valid:
             raise Unauthorized("Failed to authenticate on B2SAFE")
 
         token, irods_user = self.irods_user(username)
