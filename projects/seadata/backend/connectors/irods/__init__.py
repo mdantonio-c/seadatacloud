@@ -577,6 +577,20 @@ class IrodsPythonExt(Connector):
         else:
             return True
 
+    def read_in_chunks(self, file_object, chunk_size=None):
+        """
+        Lazy function (generator) to read a file piece by piece.
+        Default chunk size: 1k.
+        """
+        if chunk_size is None:
+            chunk_size = DEFAULT_CHUNK_SIZE
+
+        while True:
+            data = file_object.read(chunk_size)
+            if not data:
+                break
+            yield data
+
     def stream_ticket(self, path, headers=None):
         obj = self.prc.data_objects.open(path, "r")
         return Response(
