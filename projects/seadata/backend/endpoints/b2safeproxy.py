@@ -81,6 +81,7 @@ class B2safeProxy(SeaDataEndpoint):
             password=password,
             authscheme=authscheme,
         )
+
         if not valid:
             raise Unauthorized("Failed to authenticate on B2SAFE")
 
