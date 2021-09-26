@@ -5,11 +5,12 @@ B2HANDLE utilities
 import os
 
 try:
-    from b2handle import handleexceptions
     from b2handle.clientcredentials import PIDClientCredentials as credentials
     from b2handle.handleclient import EUDATHandleClient as b2handle
 except BaseException:
-    b2handle, credentials, handleexceptions = [None] * 3
+    b2handle = None
+    credentials = None
+
 from restapi.utilities.logs import log
 from seadata.endpoints.commons import path
 

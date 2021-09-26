@@ -6,6 +6,7 @@ from shutil import rmtree
 from typing import Dict, List
 
 import requests
+from plumbum import local
 from plumbum.commands.processes import ProcessExecutionError
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
@@ -13,7 +14,6 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods.client import IrodsException
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.basher import BashCommands
 from seadata.endpoints.commons.seadatacloud import ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
 
@@ -460,7 +460,6 @@ def download_restricted_order(self, order_id, order_path, myjson):
                 split_path = str(split_path)
 
                 # Execute the split of the whole zip
-                bash = BashCommands()
                 split_params = [
                     "-n",
                     MAX_ZIP_SIZE,
@@ -469,7 +468,8 @@ def download_restricted_order(self, order_id, order_path, myjson):
                     local_finalzip_path,
                 ]
                 try:
-                    bash.execute_command("/usr/bin/zipsplit", split_params)
+                    zipsplit = local["/usr/bin/zipsplit"]
+                    zipsplit(split_params)
                 except ProcessExecutionError as e:
 
                     if "Entry is larger than max split size" in e.stdout:

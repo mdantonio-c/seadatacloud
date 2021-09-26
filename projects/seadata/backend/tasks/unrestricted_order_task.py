@@ -4,6 +4,7 @@ import re
 from shutil import rmtree
 from typing import Dict, List
 
+from plumbum import local
 from plumbum.commands.processes import ProcessExecutionError
 from restapi.connectors import redis
 from restapi.connectors.celery import CeleryExt
@@ -12,7 +13,6 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods.b2handle import PIDgenerator, b2handle
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.basher import BashCommands
 from seadata.endpoints.commons.queue import prepare_message
 from seadata.endpoints.commons.seadatacloud import ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
@@ -241,7 +241,6 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
                     split_path = str(split_path)
 
                     # Execute the split of the whole zip
-                    bash = BashCommands()
                     split_params = [
                         "-n",
                         MAX_ZIP_SIZE,
@@ -250,7 +249,8 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
                         zip_local_file,
                     ]
                     try:
-                        out = bash.execute_command("/usr/bin/zipsplit", split_params)
+                        zipsplit = local["/usr/bin/zipsplit"]
+                        zipsplit(split_params)
                     except ProcessExecutionError as e:
 
                         if "Entry is larger than max split size" in e.stdout:
