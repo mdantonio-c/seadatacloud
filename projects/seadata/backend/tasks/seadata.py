@@ -2,7 +2,7 @@ import os
 
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
-from seadata.connectors.irods.b2handle import PIDgenerator
+from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import ImportManagerAPI, seadata_vars
 
 # Size in bytes

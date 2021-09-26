@@ -17,7 +17,7 @@ from restapi.services.download import Downloader
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.connectors.irods.b2handle import PIDgenerator
+from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import Metadata, SeaDataEndpoint
 from seadata.endpoints.commons import path
 
