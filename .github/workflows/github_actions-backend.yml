@@ -5,7 +5,6 @@ on:
   # schedule:
   #   - cron: "0 4 * * *"
   workflow_dispatch:
-
 env:
   PROJECT: seadata
 
@@ -18,7 +17,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - uses: rapydo/actions/install@v1
         with:
@@ -34,14 +33,12 @@ jobs:
 
           sudo chmod 777 -R /nfs/share
 
-          rapydo pull --quiet;
-          rapydo build --force;
-          rapydo add task test_task;
+          rapydo pull --quiet
+          rapydo build --force
+          rapydo add task test_task
 
-          rapydo start;
-          rapydo shell --no-tty backend 'restapi wait';
-
-          rapydo logs
+          rapydo start
+          rapydo shell --no-tty backend 'restapi wait'
 
           rapydo shell --no-tty backend 'restapi tests --wait --destroy'
 
@@ -52,6 +49,23 @@ jobs:
           docker cp ${PROJECT}_backend_1:/code/coverage.xml coverage.xml
           bash <(curl -s https://codecov.io/bash)
 
+      - name: Production mode
+        run: |
+          rapydo remove --all
+          rapydo --prod init --force
+          rapydo pull --quiet
+          rapydo ssl --volatile
+          rapydo start
+          sleep 45
+          rapydo logs
+          curl --insecure -X GET --max-time 5 https://localhost/api/status | grep "Server is alive"
+          rapydo logs --tail 20 proxy backend
+
+          LOGURU_LEVEL=WARNING rapydo list services
+          # This should fail if at least one container is in Exit status
+          # Except for frontend that is expected to be exited in prod mode
+          [[ ! $(LOGURU_LEVEL=WARNING rapydo list services | grep -v frontend | grep -E "Exit|Restarting|Created") ]]
+
       - name: Print Logs
         if: failure()
         run: tail -100 data/logs/backend-server.log
@@ -60,6 +74,3 @@ jobs:
         if: failure()
         run: |
           rapydo logs
-          # if [[ "${PROJECT}" == "seadata" ]]; then
-          #   rapydo --stack workers logs
-          # fi
