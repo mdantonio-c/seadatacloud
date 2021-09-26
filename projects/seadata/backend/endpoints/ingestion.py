@@ -18,6 +18,7 @@ from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
+from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     ENABLED_BATCH,
@@ -29,7 +30,6 @@ from seadata.endpoints import (
     SeaDataEndpoint,
 )
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.queue import log_into_queue, prepare_message
 from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 ingestion_user = "RM"
