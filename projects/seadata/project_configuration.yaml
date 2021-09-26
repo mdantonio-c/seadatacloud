@@ -65,7 +65,6 @@ variables:
     ALCHEMY_DBS: "SQL_API ICAT"
     ###############################
 
-    SEADATA_PROJECT: 1
     SEADATA_EDMO_CODE:
     # The names of the directories in the irods zone
     # for pre-production batches, for production batches,

@@ -313,18 +313,7 @@ class SeaDataEndpoint(EndpointResource):
         allow_html: bool = False,
     ) -> Response:
 
-        SEADATA_PROJECT = os.getenv("SEADATA_PROJECT", "0")
         # Locally apply the response wrapper, no longer available in the core
-
-        if SEADATA_PROJECT == "0":
-
-            return super().response(
-                content=content,
-                code=code,
-                headers=headers,
-                head_method=head_method,
-                allow_html=allow_html,
-            )
 
         if content is None:
             elements = 0

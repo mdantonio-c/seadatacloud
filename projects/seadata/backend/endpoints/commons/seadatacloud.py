@@ -9,8 +9,6 @@ from webargs import fields as webargs_fields
 
 seadata_vars = Env.load_variables_group(prefix="seadata")
 
-# SEADATA_ENABLED = seadata_vars.get('project')
-SEADATA_ENABLED = seadata_vars.get("project") == "1"
 EDMO_CODE = seadata_vars.get("edmo_code")
 API_VERSION = seadata_vars.get("api_version")
 
