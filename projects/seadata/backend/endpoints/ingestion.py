@@ -27,10 +27,10 @@ from seadata.endpoints import (
     MOUNTPOINT,
     NOT_FILLED_BATCH,
     PARTIALLY_ENABLED_BATCH,
+    EndpointsInputSchema,
     SeaDataEndpoint,
 )
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 ingestion_user = "RM"
 

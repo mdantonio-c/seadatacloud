@@ -11,9 +11,9 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
+from seadata.endpoints import EndpointsInputSchema
+from seadata.endpoints import Metadata as md
 from seadata.endpoints import SeaDataEndpoint
-from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
-from seadata.endpoints.commons.seadatacloud import Metadata as md
 
 
 #################

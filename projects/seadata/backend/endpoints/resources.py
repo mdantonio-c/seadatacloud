@@ -19,10 +19,10 @@ from seadata.endpoints import (
     MISSING_BATCH,
     MOUNTPOINT,
     NOT_FILLED_BATCH,
+    EndpointsInputSchema,
     SeaDataEndpoint,
 )
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 
 class Resources(SeaDataEndpoint):

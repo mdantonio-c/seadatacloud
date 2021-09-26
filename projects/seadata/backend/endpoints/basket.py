@@ -33,9 +33,13 @@ from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
-from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, SeaDataEndpoint
+from seadata.endpoints import (
+    MOUNTPOINT,
+    ORDERS_DIR,
+    EndpointsInputSchema,
+    SeaDataEndpoint,
+)
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
 
 TMPDIR = "/tmp"
 

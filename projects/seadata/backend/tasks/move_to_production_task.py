@@ -9,9 +9,9 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods.b2handle import PIDgenerator
 from seadata.connectors.rabbit_queue import prepare_message
+from seadata.endpoints import ErrorCodes
+from seadata.endpoints import Metadata as md
 from seadata.endpoints.commons import path
-from seadata.endpoints.commons.seadatacloud import ErrorCodes
-from seadata.endpoints.commons.seadatacloud import Metadata as md
 from seadata.tasks.seadata import ext_api, mybatchpath, notify_error
 
 pmaker = PIDgenerator()

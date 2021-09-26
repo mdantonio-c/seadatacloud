@@ -9,8 +9,7 @@ from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import SeaDataEndpoint
-from seadata.endpoints.commons.seadatacloud import EndpointsInputSchema
+from seadata.endpoints import EndpointsInputSchema, SeaDataEndpoint
 
 
 class Restricted(SeaDataEndpoint, Uploader):

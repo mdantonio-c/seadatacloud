@@ -11,7 +11,7 @@ from datetime import datetime
 from flask import request
 from restapi.env import Env
 from restapi.services.authentication import BaseAuthentication
-from seadata.endpoints.commons.seadatacloud import seadata_vars
+from seadata.endpoints import seadata_vars
 
 # from restapi.connectors import rabbitmq
 # from restapi.utilities.logs import log
