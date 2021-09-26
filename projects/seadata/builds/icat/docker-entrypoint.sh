@@ -40,7 +40,7 @@ fi
 
 # Check postgres at startup
 # https://docs.docker.com/compose/startup-order/
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_USER $IRODS_DB -c "\d" 1> /dev/null 2> /dev/null;
+until PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $IRODS_DB -c "\d" 1> /dev/null 2> /dev/null;
 do
   >&2 echo "Postgres is unavailable - sleeping"
   sleep 1

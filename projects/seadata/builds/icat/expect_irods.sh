@@ -26,8 +26,8 @@ echo "1" >> $SCRIPT
 
 ## server host name
 echo "$POSTGRES_HOST" >> $SCRIPT
-## db port 5432
-echo "5432" >> $SCRIPT
+## db port
+echo "$POSTGRES_PORT" >> $SCRIPT
 # database name
 echo "$IRODS_DB" >> $SCRIPT
 # database username

@@ -25,7 +25,7 @@ Container = Any
 
 # Dev note:
 # This object is initialized by get_or_create_handle() in
-# module "b2stage/backend/apis/commons/cluster.py".
+# module "seadata/backend/endpoints/__init__.py".
 # It receives all config that starts with "RESOURCES".
 class Rancher:
     def __init__(
