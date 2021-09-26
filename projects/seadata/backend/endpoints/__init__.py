@@ -223,7 +223,7 @@ class SeaDataEndpoint(EndpointResource):
         return f"{prefix}/{qc_name}"
 
     def get_batch_status(
-        self, imain: irods.IrodsPythonExt, irods_path: str, local_path: str
+        self, imain: irods.IrodsPythonExt, irods_path: str, local_path: Path
     ) -> Tuple[int, List[str]]:
 
         files = {}
@@ -255,23 +255,21 @@ class SeaDataEndpoint(EndpointResource):
 
         return PARTIALLY_ENABLED_BATCH, files
 
-    def irods_user(self, username, session):
+    def irods_user(self, username):
 
         user = self.auth.get_user(username)
 
         if user is not None:
             log.debug("iRODS user already cached: {}", username)
-            user.session = session
         else:
 
             userdata = {
                 "email": username,
                 "name": username,
-                # Password will not be used because the authmedos is `irods`
-                "password": session,
+                # Password will not be used because the authmethod is `irods`
+                "password": username,
                 "surname": "iCAT",
                 "authmethod": "irods",
-                "session": session,
             }
             user = self.auth.create_user(userdata, [self.auth.default_role])
             try:
@@ -287,7 +285,6 @@ class SeaDataEndpoint(EndpointResource):
                 # Unable to do something...
                 if user is None:
                     raise e
-                user.session = session
 
         # token
         payload, full_payload = self.auth.fill_payload(user)

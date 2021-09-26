@@ -5,12 +5,12 @@ import logging
 from typing import Optional, Union
 
 from irods import exception as iexceptions
+from irods.session import iRODSSession
 from restapi.connectors import Connector
 from restapi.env import Env
 from restapi.exceptions import ServiceUnavailable
 from restapi.utilities.logs import log
 from seadata.connectors.irods.client import IrodsPythonClient
-from seadata.connectors.irods.session import iRODSPickleSession as iRODSSession
 
 # Silence too much logging from irods
 irodslogger = logging.getLogger("irods")
@@ -43,26 +43,16 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
         variables = self.variables.copy()
         variables.update(kwargs)
 
-        session = variables.get("user_session")
-
         authscheme = variables.get("authscheme", NORMAL_AUTH_SCHEME)
-
-        if session:
-            user = session.email
-        else:
-            user = variables.get("user")
-            password = variables.get("password")
+        user = variables.get("user")
+        password = variables.get("password")
 
         if user is None:
             raise AttributeError("No user is defined")
         log.debug("Irods user: {}", user)
 
         ######################
-        if session:
-            # recover the serialized session
-            obj = iRODSSession.deserialize(session.session)
-
-        elif authscheme == PAM_AUTH_SCHEME:
+        if authscheme == PAM_AUTH_SCHEME:
 
             obj = iRODSSession(
                 user=user,
@@ -73,8 +63,7 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
                 zone=variables.get("zone"),
             )
 
-        elif password is not None:
-            authscheme = NORMAL_AUTH_SCHEME
+        elif authscheme == NORMAL_AUTH_SCHEME:
 
             obj = iRODSSession(
                 user=user,
@@ -89,14 +78,6 @@ class IrodsPythonExt(Connector, IrodsPythonClient):
             raise NotImplementedError(
                 f"Invalid iRODS authentication scheme: {authscheme}"
             )
-
-        # # set timeout on existing socket/connection
-        # with obj.pool.get_connection() as conn:
-        #     timer = conn.socket.gettimeout()
-        #     log.debug("Current timeout: {}", timer)
-        #     conn.socket.settimeout(10.0)
-        #     timer = conn.socket.gettimeout()
-        #     log.debug("New timeout: {}", timer)
 
         # based on https://github.com/irods/python-irodsclient/pull/90
         # NOTE: timeout has to be below 30s (http request timeout)

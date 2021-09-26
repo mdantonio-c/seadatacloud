@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Dict, Optional
 
 from flask import Response, stream_with_context
 from irods import exception as iexceptions
@@ -16,9 +16,7 @@ class IrodsException(RestApiException):
     pass
 
 
-# Mostly excluded from coverage because it is only used by a very specific service
-# No further tests will be included in the core
-class IrodsPythonClient:  # type: ignore
+class IrodsPythonClient:
 
     prc: Any
     anonymous_user = "anonymous"
@@ -52,24 +50,12 @@ class IrodsPythonClient:  # type: ignore
         except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
             raise IrodsException(f"{path} not found or no permissions")
 
-    @staticmethod
-    def getPath(path, prefix=None):
-        if prefix is not None and prefix != "":
-            path = path[len(prefix) :]
-            if path[0] == "/":
-                path = path[1:]
-
-        return os.path.dirname(path)
-
     def list(
         self,
-        path=None,
-        recursive=False,
-        detailed=False,
-        removePrefix=None,
-        get_pid=False,
-        get_checksum=False,
-    ):
+        path: Optional[str] = None,
+        recursive: bool = False,
+        detailed: bool = False,
+    ) -> Dict[str, Dict[str, Any]]:
         """List the files inside an iRODS path/collection"""
 
         if path is None:
@@ -79,15 +65,13 @@ class IrodsPythonClient:  # type: ignore
             raise IrodsException("Cannot list a Data Object; you may get it instead.")
 
         try:
-            data = {}
+            data: Dict[str, Dict[str, Any]] = {}
             root = self.prc.collections.get(path)
 
             for coll in root.subcollections:
 
-                row = {}
+                row: Dict[str, Any] = {}
                 key = coll.name
-                if get_pid:
-                    row["PID"] = None
                 row["name"] = coll.name
                 row["objects"] = {}
                 if recursive:
@@ -95,9 +79,8 @@ class IrodsPythonClient:  # type: ignore
                         path=coll.path,
                         recursive=recursive,
                         detailed=detailed,
-                        removePrefix=removePrefix,
                     )
-                row["path"] = self.getPath(coll.path, removePrefix)
+                row["path"] = os.path.dirname(coll.path)
                 row["object_type"] = "collection"
                 if detailed:
                     row["owner"] = "-"
@@ -109,14 +92,8 @@ class IrodsPythonClient:  # type: ignore
                 row = {}
                 key = obj.name
                 row["name"] = obj.name
-                row["path"] = self.getPath(obj.path, removePrefix)
+                row["path"] = os.path.dirname(obj.path)
                 row["object_type"] = "dataobject"
-
-                if get_pid:
-                    row["PID"] = None
-
-                if get_checksum:
-                    row["checksum"] = None
 
                 if detailed:
                     row["owner"] = obj.owner_name
@@ -282,7 +259,7 @@ class IrodsPythonClient:  # type: ignore
     # ############ ACL Management ##############
     ############################################
 
-    def enable_inheritance(self, path, zone=None):
+    def enable_inheritance(self, path: str, zone: Optional[str] = None) -> None:
 
         if zone is None:
             zone = self.get_current_zone()
@@ -295,11 +272,7 @@ class IrodsPythonClient:  # type: ignore
         except iexceptions.CAT_INVALID_ARGUMENT:
             if not self.is_collection(path) and not self.is_dataobject(path):
                 raise IrodsException("Cannot set Inherit: path not found")
-            else:
-                raise IrodsException("Cannot set Inherit")
-            return False
-        else:
-            return True
+            raise IrodsException("Cannot set Inherit")
 
     def create_collection_inheritable(self, ipath, user, permissions="own"):
 

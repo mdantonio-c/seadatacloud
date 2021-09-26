@@ -2,7 +2,6 @@ from restapi import decorators
 from restapi.exceptions import Unauthorized
 from restapi.models import Schema, fields
 from restapi.rest.definition import Response
-from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.connectors.irods.client import IrodsException, iexceptions
@@ -53,26 +52,6 @@ class B2safeProxy(SeaDataEndpoint):
 
         return obj
 
-    @decorators.auth.require()
-    @decorators.endpoint(
-        path="/auth/b2safeproxy",
-        summary="Test a token obtained as a b2safe user",
-        responses={200: "Token is valid"},
-    )
-    def get(self, user: User) -> Response:
-
-        log.debug("Token user: {}", user)
-
-        if not user.session:
-            raise Unauthorized("This user is not registered inside B2SAFE")
-
-        log.info("Valid B2SAFE user: {}", user.uuid)
-
-        icom = irods.get_instance(user_session=user)
-        icom.list()
-
-        return self.response("validated")
-
     @decorators.use_kwargs(Credentials)
     @decorators.endpoint(
         path="/auth/b2safeproxy",
@@ -109,8 +88,7 @@ class B2safeProxy(SeaDataEndpoint):
         if irods is None:
             raise Unauthorized("Failed to authenticate on B2SAFE")
 
-        encoded_session = irods.prc.serialize()
-        token, irods_user = self.irods_user(username, encoded_session)
+        token, irods_user = self.irods_user(username)
 
         imain = irods.get_instance()
 
