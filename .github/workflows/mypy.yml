@@ -25,6 +25,6 @@ jobs:
       - uses: rapydo/actions/mypy@v1
         with:
           project: ${PROJECT}
-          allow_untyped_defs: true
+          # allow_untyped_defs: true
           # install: ...
           ignore: b2handle glom gdapi irods irods.exception tests websocket
