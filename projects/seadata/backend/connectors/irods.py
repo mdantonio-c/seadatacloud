@@ -33,8 +33,14 @@ class IrodsException(RestApiException):
 # No further tests will be included in the core
 class IrodsPythonExt(Connector):
     def __init__(self):
-        self.prc = None
+        self.prc_session = None
         super().__init__()
+
+    @property
+    def prc(self) -> Any:
+        if self.prc_session:
+            return self.prc_session
+        raise AttributeError("iRods sessions is unavailable, please connect the server")
 
     def get_connection_exception(self):
         # Do not catch irods.exceptions.PAM_AUTH_PASSWORD_FAILED and
@@ -102,15 +108,15 @@ class IrodsPythonExt(Connector):
         except iexceptions.PAM_AUTH_PASSWORD_FAILED as e:
             raise e
 
-        self.prc = obj
+        self.prc_session = obj
         # self.variables = variables
 
         return self
 
     def disconnect(self):
         self.disconnected = True
-        if self.prc:
-            self.prc.cleanup()
+        if self.prc_session:
+            self.prc_session.cleanup()
 
     def is_connected(self):
 
