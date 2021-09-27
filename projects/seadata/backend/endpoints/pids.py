@@ -66,7 +66,6 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
 
         for key, value in metadata.items():
             if key in Metadata.keys:
-                k = cast(str, key)
-                response["metadata"][k] = value
+                response["metadata"][key] = value  # type: ignore
 
         return self.response(response)
