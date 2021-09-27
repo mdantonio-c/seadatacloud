@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from celery.app.task import Task
@@ -50,7 +51,7 @@ def notify_error(
     backdoor: bool,
     task: Task,
     extra: Optional[Any] = None,
-    subject: Optional[str] = None,
+    subject: Optional[Path] = None,
     edmo_code: Optional[int] = None,
 ) -> str:
 
@@ -67,7 +68,7 @@ def notify_error(
         "description": error[1],
     }
     if subject is not None:
-        e["subject"] = subject
+        e["subject"] = str(subject)
 
     payload["errors"].append(e)
 
