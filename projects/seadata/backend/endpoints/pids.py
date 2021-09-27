@@ -9,7 +9,7 @@ https://github.com/EUDAT-B2STAGE/http-api/blob/master/docs/user/endpoints.md
 """
 
 from restapi import decorators
-from restapi.exceptions import BadRequest
+from restapi.exceptions import BadRequest, NotFound
 from restapi.models import fields
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
@@ -47,6 +47,10 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
 
         log.debug("PID {} verified", pid)
         ipath = pmaker.parse_pid_dataobject_path(b2handle_output)
+
+        if not ipath:
+            raise NotFound(f"Object referenced by {pid} cannot be found")
+
         response = {
             "PID": pid,
             "verified": True,

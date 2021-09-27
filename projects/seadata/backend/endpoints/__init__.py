@@ -241,6 +241,7 @@ class SeaDataEndpoint(EndpointResource):
     def irods_user(self, username: str) -> str:
 
         user = self.auth.get_user(username)
+        sql = sqlalchemy.get_instance()
 
         if user is not None:
             log.debug("iRODS user already cached: {}", username)
@@ -255,7 +256,6 @@ class SeaDataEndpoint(EndpointResource):
                 "authmethod": "irods",
             }
             user = self.auth.create_user(userdata, [self.auth.default_role])
-            sql = sqlalchemy.get_instance()
             try:
                 sql.session.commit()
                 log.info("Cached iRODS user: {}", username)

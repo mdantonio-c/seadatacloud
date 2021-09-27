@@ -60,7 +60,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
 
     labels = ["order"]
 
-    def get_filename_from_type(self, order_id, ftype):
+    def get_filename_from_type(self, order_id: str, ftype: str) -> Optional[str]:
         if len(ftype) < 2:
             return None
 
@@ -202,6 +202,10 @@ class BasketEndpoint(SeaDataEndpoint):
 
             for _, data in ils.items():
                 name = data.get("name")
+
+                if not name:  # pragma: no cover
+                    continue
+
                 if name.endswith("_restricted.zip.bak"):
                     continue
 
