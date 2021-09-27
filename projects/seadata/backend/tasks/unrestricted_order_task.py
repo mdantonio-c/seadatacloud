@@ -58,7 +58,7 @@ def unrestricted_order(
             log.info("Retrieving paths for {} PIDs", len(pids))
             ##################
             # Verify pids
-            files: Dict[str, str] = {}
+            files: Dict[str, Path] = {}
             errors: List[Dict[str, str]] = []
             counter = 0
             verified = 0
@@ -118,11 +118,11 @@ def unrestricted_order(
 
                     log.warning("PID not found: {}", pid)
                 else:
-                    ipath = pmaker.parse_pid_dataobject_path(b2handle_output)
-                    log.debug("PID verified: {}\n({})", pid, ipath)
-                    files[pid] = ipath
-                    r.set(pid, str(ipath))
-                    r.set(str(ipath), pid)
+                    pid_path = pmaker.parse_pid_dataobject_path(b2handle_output)
+                    log.debug("PID verified: {}\n({})", pid, pid_path)
+                    files[pid] = pid_path
+                    r.set(pid, str(pid_path))
+                    r.set(str(pid_path), pid)
 
                     verified += 1
                     self.update_state(

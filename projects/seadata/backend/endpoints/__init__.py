@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import pytz
 import requests
@@ -208,7 +208,7 @@ class SeaDataEndpoint(EndpointResource):
 
     def get_batch_status(
         self, imain: irods.IrodsPythonExt, irods_path: str, local_path: Path
-    ) -> Tuple[int, List[str]]:
+    ) -> Tuple[int, Union[List[str], Dict[str, Dict[str, Any]]]]:
 
         if not imain.is_collection(irods_path):
             return MISSING_BATCH, []
@@ -465,14 +465,11 @@ class ImportManagerAPI:
         self,
         payload: Dict[str, Any],
         backdoor: bool = False,
-        edmo_code: Optional[int] = None,
+        edmo_code: Optional[str] = None,
     ) -> bool:
 
-        if edmo_code is None:
-            edmo_code = EDMO_CODE
-
         # timestamp '20180320T08:15:44' = YYMMDDTHH:MM:SS
-        payload["edmo_code"] = edmo_code
+        payload["edmo_code"] = edmo_code or EDMO_CODE
         payload["datetime"] = datetime.today().strftime("%Y%m%dT%H:%M:%S")
         if "api_function" not in payload:
             payload["api_function"] = "unknown_function"

@@ -64,7 +64,7 @@ class Rancher:
     # def project_handle(self, project):
     #     return self._client.by_id_project(self._project)
 
-    def hosts(self) -> Dict[str, Dict[str, str]]:
+    def hosts(self) -> Dict[str, Dict[str, Any]]:
         """
         'state':'active'
         'agentIpAddress':'130.186.13.150'
