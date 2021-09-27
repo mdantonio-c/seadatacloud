@@ -9,7 +9,7 @@ https://github.com/rancher/validation-tests/tree/master/tests/v2_validation/catt
 """
 
 import time
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 import gdapi
 from restapi.env import Env
@@ -26,8 +26,17 @@ Container = Any
 class Rancher:
     # This receives all config envs that starts with "RESOURCES"
     def __init__(
-        self, key, secret, url, project, hub, hubuser, hubpass, localpath, qclabel
-    ):
+        self,
+        key: str,
+        secret: str,
+        url: str,
+        project: str,
+        hub: str,
+        hubuser: str,
+        hubpass: str,
+        localpath: str,
+        qclabel: str,
+    ) -> None:
 
         ####################
         # SET URL
@@ -45,7 +54,7 @@ class Rancher:
         self.connect(key, secret)
         # self.project_handle(project)
 
-    def connect(self, key, secret):
+    def connect(self, key: str, secret: str) -> None:
 
         self._client = gdapi.Client(
             url=self._project_uri, access_key=key, secret_key=secret
@@ -54,7 +63,7 @@ class Rancher:
     # def project_handle(self, project):
     #     return self._client.by_id_project(self._project)
 
-    def hosts(self):
+    def hosts(self) -> Dict[str, Dict[str, str]]:
         """
         'state':'active'
         'agentIpAddress':'130.186.13.150'
@@ -79,7 +88,7 @@ class Rancher:
                 'memTotal':24111,
             "physicalHostId":"1ph3",
         """
-        hosts = {}
+        hosts: Dict[str, Dict[str, str]] = {}
         for data in self._client.list_host():
             host = data.get("hostname")
             if not data.get("state") == "active":
@@ -92,7 +101,7 @@ class Rancher:
             }
         return hosts
 
-    def obj_to_dict(self, obj):
+    def obj_to_dict(self, obj: Any) -> Dict[str, Any]:
         import json
 
         return json.loads(obj.__repr__().replace("'", '"'))
@@ -120,7 +129,7 @@ class Rancher:
 
         return containers
 
-    def containers(self):
+    def containers(self) -> Dict[str, Any]:
         """
         https://github.com/rancher/gdapi-python/blob/master/gdapi.py#L68
         'io.rancher.container.system': 'true'
@@ -128,7 +137,7 @@ class Rancher:
 
         system_label = "io.rancher.container.system"
 
-        containers = {}
+        containers: Dict[str, Any] = {}
         for info in self.all_containers_available():
 
             # detect system containers
@@ -159,9 +168,9 @@ class Rancher:
 
         return containers
 
-    def list(self):
+    def list(self) -> Dict[str, Any]:
 
-        resources = {}
+        resources: Dict[str, Any] = {}
         containers = self.containers()
         ckey = "containers"
 
@@ -180,7 +189,7 @@ class Rancher:
 
         return resources
 
-    def recover_logs(self, container_name):
+    def recover_logs(self, container_name: str) -> str:
         import websocket as ws
 
         container = self.get_container_object(container_name)
@@ -202,7 +211,7 @@ class Rancher:
 
         return out
 
-    def catalog_images(self):
+    def catalog_images(self) -> Any:
         """check if container image is there"""
         catalog_url = f"https://{self._hub_uri}/v2/_catalog"
         # print(catalog_url)
@@ -217,7 +226,7 @@ class Rancher:
         else:
             return catalog.get("repositories", {})
 
-    def internal_labels(self, pull=True):
+    def internal_labels(self, pull: bool = True) -> Dict[str, str]:
         """
         Define Rancher docker labels
         """
@@ -236,14 +245,11 @@ class Rancher:
 
     def run(
         self,
-        container_name,
-        image_name,
-        wait_running=None,
-        private=False,
-        extras=None,
-        wait_stopped=None,
-        pull=True,
-    ):
+        container_name: str,
+        image_name: str,
+        private: bool = False,
+        extras: Optional[Dict[str, Any]] = None,
+    ) -> None:
 
         ############
         if private:
@@ -265,7 +271,7 @@ class Rancher:
         params = {
             "name": container_name,
             "imageUuid": "docker:" + image_name,
-            "labels": self.internal_labels(pull),
+            "labels": self.internal_labels(pull=True),
             # entryPoint=['/bin/sh'],
             # command=['sleep', '1234567890'],
         }
@@ -289,13 +295,11 @@ class Rancher:
 
             CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
             # Should we wait for the container?
-            if wait_stopped is None:
-                x = CONTAINERS_VARS.get("wait_stopped") or ""
-                wait_stopped = not (x.lower() == "false" or int(x) == 0)
+            x = CONTAINERS_VARS.get("wait_stopped") or ""
+            wait_stopped = not (x.lower() == "false" or int(x) == 0)
 
-            if wait_running is None:
-                x = CONTAINERS_VARS.get("wait_running") or ""
-                wait_running = not (x.lower() == "false" or int(x) == 0)
+            x = CONTAINERS_VARS.get("wait_running") or ""
+            wait_running = not (x.lower() == "false" or int(x) == 0)
 
             if wait_stopped or wait_running:
                 log.info(
@@ -360,7 +364,7 @@ class Rancher:
                 )
             return None
 
-    def get_container_object(self, container_name):
+    def get_container_object(self, container_name: str) -> Optional[Any]:
         containers = self.all_containers_available()
         # containers = self._client.list_container(limit=PERPAGE_LIMIT)
 

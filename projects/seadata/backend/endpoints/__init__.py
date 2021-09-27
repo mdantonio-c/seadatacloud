@@ -96,7 +96,7 @@ class SeaDataEndpoint(EndpointResource):
             )
         )
 
-    def get_ingestion_path_in_container(self):
+    def get_ingestion_path_in_container(self) -> str:
         """
         Return the path where the data is located
         mounted inside the Rancher containers.
@@ -117,13 +117,6 @@ class SeaDataEndpoint(EndpointResource):
         # "/usr/share/batch" (hard-coded)
         return str(Path(FS_PATH_IN_CONTAINER))
 
-    def get_input_zip_filename(self, filename=None, extension="zip", sep="."):
-        if filename is None:
-            filename = "input"
-        else:
-            filename = filename.replace(f"{sep}{extension}", "")
-        return f"{filename}{sep}{extension}"
-
     def get_irods_path(self, irods_client, mypath, suffix=None):
         """
         Helper to construct a path of a data object
@@ -136,7 +129,6 @@ class SeaDataEndpoint(EndpointResource):
             suffix_path.joinpath(suffix)
 
         return irods_client.get_current_zone(suffix=str(suffix_path))
-        # TODO: Move to other module, has nothing to do with Rancher cluster!
 
     def get_irods_production_path(self, irods_client, batch_id=None):
         """
@@ -150,7 +142,6 @@ class SeaDataEndpoint(EndpointResource):
         Example: /myIrodsZone/cloud/<batch_id>
         """
         return self.get_irods_path(irods_client, PRODUCTION_COLL, batch_id)
-        # TODO: Move to other module, has nothing to do with Rancher cluster!
 
     def get_irods_batch_path(self, irods_client, batch_id=None):
         """
@@ -164,7 +155,6 @@ class SeaDataEndpoint(EndpointResource):
         Example: /myIrodsZone/batches/<batch_id>
         """
         return self.get_irods_path(irods_client, INGESTION_COLL, batch_id)
-        # TODO: Move to other module, has nothing to do with Rancher cluster!
 
     def get_irods_order_path(self, irods_client, order_id=None):
         """
@@ -177,7 +167,6 @@ class SeaDataEndpoint(EndpointResource):
         Example: /myIrodsZone/orders/<order_id>
         """
         return self.get_irods_path(irods_client, ORDERS_COLL, order_id)
-        # TODO: Move to other module, has nothing to do with Rancher cluster!
 
     def return_async_id(self, request_id: str) -> Response:
         # dt = "20170712T15:33:11"

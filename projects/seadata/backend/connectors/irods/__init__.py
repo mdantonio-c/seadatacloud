@@ -38,16 +38,16 @@ class IrodsPythonExt(Connector):
 
     @property
     def prc(self) -> Any:
-        if self.prc_session:
+        if self.prc_session:  # type: ignore
             return self.prc_session
         raise AttributeError("iRods sessions is unavailable, please connect the server")
 
-    def get_connection_exception(self) -> ExceptionsList:
+    @staticmethod
+    def get_connection_exception() -> ExceptionsList:
         # Do not catch irods.exceptions.PAM_AUTH_PASSWORD_FAILED and
         # irods.expcetions.CAT_INVALID_AUTHENTICATION because they are used
         # by b2safeproxy to identify wrong credentials
         return (
-            NotImplementedError,
             ServiceUnavailable,
             AttributeError,
             FileNotFoundError,

@@ -1,5 +1,7 @@
 import os
+from typing import Any, Dict, Optional, Tuple
 
+from celery.app.task import Task
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from seadata.connectors.b2handle import PIDgenerator
@@ -43,8 +45,14 @@ pmaker = PIDgenerator()
 
 
 def notify_error(
-    error, payload, backdoor, task, extra=None, subject=None, edmo_code=None
-):
+    error: Tuple[str, str],
+    payload: Dict[str, Any],
+    backdoor: bool,
+    task: Task,
+    extra: Optional[Any] = None,
+    subject: Optional[str] = None,
+    edmo_code: Optional[int] = None,
+) -> str:
 
     error_message = f"Error {error[0]}: {error[1]}"
     if subject is not None:
