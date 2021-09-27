@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from shutil import rmtree
 from typing import Dict, List
 
@@ -8,7 +9,6 @@ from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.endpoints import ErrorCodes
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import ext_api, notify_error
 
 TIMEOUT = 180
@@ -55,8 +55,8 @@ def delete_orders(self, orders_path, local_orders_path, myjson):
                     meta={"total": total, "step": counter, "errors": len(errors)},
                 )
 
-                order_path = path.join(orders_path, order)
-                local_order_path = path.join(local_orders_path, order)
+                order_path = Path(orders_path, order)
+                local_order_path = Path(local_orders_path, order)
                 log.info("Delete request for order collection: {}", order_path)
                 log.info("Delete request for order path: {}", local_order_path)
 

@@ -19,7 +19,6 @@ from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import Metadata, SeaDataEndpoint
-from seadata.endpoints.commons import path
 
 
 class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
@@ -52,12 +51,12 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
             "PID": pid,
             "verified": True,
             "metadata": {},
-            "temp_id": path.last_part(ipath),
-            "batch_id": path.last_part(path.dir_name(ipath)),
+            "temp_id": ipath.name,
+            "batch_id": ipath.parent.name,
         }
 
         imain = irods.get_instance()
-        metadata, _ = imain.get_metadata(ipath)
+        metadata, _ = imain.get_metadata(str(ipath))
 
         for key, value in metadata.items():
             if key in Metadata.keys:

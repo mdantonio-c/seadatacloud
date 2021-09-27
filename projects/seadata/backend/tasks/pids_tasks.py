@@ -1,5 +1,6 @@
 import os
-from typing import Dict
+from pathlib import Path
+from typing import Dict, List
 
 from celery.app.task import Task
 from restapi.connectors import redis
@@ -7,16 +8,15 @@ from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
-from seadata.endpoints.commons import path
 
 TIMEOUT = 180
 
 
-def recursive_list_files(imain, irods_path):
+def recursive_list_files(imain: irods.IrodsPythonExt, irods_path: str) -> List[str]:
 
-    data = []
+    data: List[str] = []
     for current in imain.list(irods_path):
-        ifile = path.join(irods_path, current, return_str=True)
+        ifile = str(Path(irods_path, current))
         if imain.is_dataobject(ifile):
             data.append(ifile)
         else:
@@ -47,9 +47,6 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
             stop_timeout()
         except BaseException as e:
             log.error(e)
-
-        # for current in imain.list(irods_path):
-        #     ifile = path.join(irods_path, current, return_str=True)
 
         for ifile in data:
 

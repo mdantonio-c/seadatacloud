@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from shutil import rmtree
 from typing import Dict, List
 
@@ -8,7 +9,6 @@ from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.endpoints import ErrorCodes
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import ext_api, notify_error
 
 TIMEOUT = 180
@@ -53,8 +53,8 @@ def delete_batches(self, batches_path, local_batches_path, myjson):
                     meta={"total": total, "step": counter, "errors": len(errors)},
                 )
 
-                batch_path = path.join(batches_path, batch)
-                local_batch_path = path.join(local_batches_path, batch)
+                batch_path = Path(batches_path, batch)
+                local_batch_path = Path(local_batches_path, batch)
                 log.info("Delete request for batch collection {}", batch_path)
                 log.info("Delete request for batch path {}", local_batch_path)
 

@@ -4,6 +4,7 @@ Launch containers for quality checks in Seadata
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -22,7 +23,6 @@ from seadata.endpoints import (
     EndpointsInputSchema,
     SeaDataEndpoint,
 )
-from seadata.endpoints.commons import path
 
 
 class Resources(SeaDataEndpoint):
@@ -92,7 +92,7 @@ class Resources(SeaDataEndpoint):
         try:
             imain = irods.get_instance()
             batch_path = self.get_irods_batch_path(imain, batch_id)
-            local_path = path.join(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)
             log.info("Batch local path: {}", local_path)
             batch_status, batch_files = self.get_batch_status(

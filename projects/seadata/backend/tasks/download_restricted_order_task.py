@@ -2,10 +2,12 @@ import hashlib
 import os
 import re
 import zipfile
+from pathlib import Path
 from shutil import rmtree
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import requests
+from celery.app.task import Task
 from plumbum import local
 from plumbum.commands.processes import ProcessExecutionError
 from restapi.connectors.celery import CeleryExt
@@ -14,7 +16,6 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods import IrodsException
 from seadata.endpoints import ErrorCodes
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
 
 TIMEOUT = 180
@@ -61,7 +62,9 @@ def check_params(params):
 
 
 @CeleryExt.task()
-def download_restricted_order(self, order_id, order_path, myjson):
+def download_restricted_order(
+    self: Task, order_id: str, order_path: str, myjson: Dict[str, Any]
+) -> str:
 
     myjson["parameters"]["request_id"] = myjson["request_id"]
     myjson["request_id"] = self.request.id
@@ -108,9 +111,9 @@ def download_restricted_order(self, order_id, order_path, myjson):
                 log.warning("{} already contains extention .zip", filename)
                 # TO DO: save base_filename as filename - .zip
             else:
-                filename = path.append_compress_extension(filename)
+                filename += ".zip"
 
-            final_zip = order_path + "/" + filename.rstrip("/")
+            final_zip = Path(order_path, filename.rstrip("/"))
 
             log.info("order_id = {}", order_id)
             log.info("order_path = {}", order_path)
@@ -122,7 +125,6 @@ def download_restricted_order(self, order_id, order_path, myjson):
 
             # zip file uploaded from partner
             file_name = params.get("file_name")
-
             file_size = params.get("file_size")
 
             try:
@@ -158,7 +160,7 @@ def download_restricted_order(self, order_id, order_path, myjson):
             log.info("Merging zip file", file_name)
 
             if not file_name.endswith(".zip"):
-                file_name = path.append_compress_extension(file_name)
+                file_name += ".zip"
 
             # 1 - download in local-dir
             download_url = os.path.join(download_path, file_name)
@@ -203,11 +205,11 @@ def download_restricted_order(self, order_id, order_path, myjson):
 
             log.info("Request status = {}", r.status_code)
 
-            local_dir = path.join(myorderspath, order_id)
-            path.create(local_dir, directory=True, force=True)
+            local_dir = Path(myorderspath, order_id)
+            local_dir.mkdir()
             log.info("Local dir = {}", local_dir)
 
-            local_zip_path = path.join(local_dir, file_name)
+            local_zip_path = local_dir.joinpath(file_name)
             log.info("partial_zip = {}", local_zip_path)
 
             # from python 3.6
@@ -257,13 +259,13 @@ def download_restricted_order(self, order_id, order_path, myjson):
 
             # 4 - decompress
             d = os.path.splitext(os.path.basename(str(local_zip_path)))[0]
-            local_unzipdir = path.join(local_dir, d)
+            local_unzipdir = local_dir.joinpath(d)
 
-            if os.path.isdir(str(local_unzipdir)):
+            if local_unzipdir.exists():
                 log.warning("{} already exist, removing it", local_unzipdir)
-                rmtree(str(local_unzipdir), ignore_errors=True)
+                rmtree(local_unzipdir, ignore_errors=True)
 
-            path.create(local_dir, directory=True, force=True)
+            local_unzipdir.mkdir()
             log.info("Local unzip dir = {}", local_unzipdir)
 
             log.info("Unzipping {}", local_zip_path)
@@ -314,7 +316,7 @@ def download_restricted_order(self, order_id, order_path, myjson):
 
             log.info("Verifying final zip: {}", final_zip)
             # 6 - check if final_zip exists
-            if not imain.exists(final_zip):
+            if not imain.exists(str(final_zip)):
                 # 7 - if not, simply copy partial_zip -> final_zip
                 log.info("Final zip does not exist, copying partial zip")
                 try:
@@ -347,9 +349,7 @@ def download_restricted_order(self, order_id, order_path, myjson):
                 log.info("Already exists, merge zip files")
 
                 log.info("Copying zipfile locally")
-                local_finalzip_path = path.join(
-                    local_dir, os.path.basename(str(final_zip))
-                )
+                local_finalzip_path = local_dir.joinpath(final_zip.name)
                 try:
                     start_timeout(TIMEOUT)
                     imain.open(str(final_zip), str(local_finalzip_path))
@@ -438,7 +438,7 @@ def download_restricted_order(self, order_id, order_path, myjson):
                     )
 
                 # imain.remove(local_zip_path)
-            rmtree(str(local_unzipdir), ignore_errors=True)
+            rmtree(local_unzipdir, ignore_errors=True)
 
             self.update_state(state="COMPLETED")
 
@@ -451,20 +451,18 @@ def download_restricted_order(self, order_id, order_path, myjson):
 
                 # Create a sub folder for split files. If already exists,
                 # remove it before to start from a clean environment
-                split_path = path.join(local_dir, "restricted_zip_split")
+                split_path = Path(local_dir, "restricted_zip_split")
                 # split_path is an object
-                rmtree(str(split_path), ignore_errors=True)
+                rmtree(split_path, ignore_errors=True)
                 # path create requires a path object
-                path.create(split_path, directory=True, force=True)
-                # path object is no longer required, cast to string
-                split_path = str(split_path)
+                split_path.mkdir()
 
                 # Execute the split of the whole zip
                 split_params = [
                     "-n",
                     MAX_ZIP_SIZE,
                     "-b",
-                    split_path,
+                    str(split_path),
                     local_finalzip_path,
                 ]
                 try:
@@ -512,12 +510,10 @@ def download_restricted_order(self, order_id, order_path, myjson):
                             extra=str(local_finalzip_path),
                         )
                     index = m.group(1).lstrip("0")
-                    subzip_path = path.join(split_path, subzip_file)
+                    subzip_path = split_path.joinpath(subzip_file)
 
-                    subzip_ifile = path.append_compress_extension(
-                        f"{base_filename}{index}"
-                    )
-                    subzip_ipath = path.join(order_path, subzip_ifile)
+                    subzip_ifile = f"{base_filename}{index}.zip"
+                    subzip_ipath = Path(order_path, subzip_ifile)
 
                     log.info("Uploading {} -> {}", subzip_path, subzip_ipath)
                     try:

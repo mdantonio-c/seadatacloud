@@ -97,7 +97,7 @@ class PIDgenerator:
             log.error("Error parsing URL, not enough tokens? {}", path_pieces)
 
         # print("pieces", path_pieces)
-        ipath = str(Path(*path_pieces))
+        ipath = Path(*path_pieces)
         log.debug("Data object: {}", ipath)
 
         return ipath

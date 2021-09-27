@@ -1,9 +1,11 @@
 import logging
 import os
 import re
-from shutil import rmtree
-from typing import Dict, List
+from pathlib import Path
+from shutil import make_archive, rmtree
+from typing import Any, Dict, List
 
+from celery.app.task import Task
 from plumbum import local
 from plumbum.commands.processes import ProcessExecutionError
 from restapi.connectors import redis
@@ -14,7 +16,6 @@ from seadata.connectors import irods
 from seadata.connectors.b2handle import PIDgenerator, b2handle
 from seadata.connectors.rabbit_queue import prepare_message
 from seadata.endpoints import ErrorCodes
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
 
 TIMEOUT = 180
@@ -25,7 +26,13 @@ pmaker = PIDgenerator()
 
 
 @CeleryExt.task()
-def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
+def unrestricted_order(
+    self: Task,
+    order_id: str,
+    order_path: str,
+    zip_file_name: str,
+    myjson: Dict[str, Any],
+) -> str:
 
     log.info("I'm {} (unrestricted_order)", self.request.id)
 
@@ -40,11 +47,9 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
 
     ##################
     # SETUP
-    # local_dir = path.build([TMPDIR, order_id])
-    local_dir = path.join(myorderspath, order_id)
-    path.create(local_dir, directory=True, force=True)
-    local_zip_dir = path.join(local_dir, "tobezipped")
-    path.create(local_zip_dir, directory=True, force=True)
+    local_dir = Path(myorderspath, order_id)
+    local_zip_dir = local_dir.joinpath("tobezipped")
+    local_zip_dir.mkdir(parents=True)
 
     r = redis.get_instance().r
     try:
@@ -53,7 +58,7 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
             log.info("Retrieving paths for {} PIDs", len(pids))
             ##################
             # Verify pids
-            files = {}
+            files: Dict[str, str] = {}
             errors: List[Dict[str, str]] = []
             counter = 0
             verified = 0
@@ -68,7 +73,7 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
                 # Check the cache first
                 ifile = r.get(pid)
                 if ifile is not None:
-                    files[pid] = ifile.decode()
+                    files[pid] = Path(ifile.decode())
                     verified += 1
                     self.update_state(
                         state="PROGRESS",
@@ -116,8 +121,8 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
                     ipath = pmaker.parse_pid_dataobject_path(b2handle_output)
                     log.debug("PID verified: {}\n({})", pid, ipath)
                     files[pid] = ipath
-                    r.set(pid, ipath)
-                    r.set(ipath, pid)
+                    r.set(pid, str(ipath))
+                    r.set(str(ipath), pid)
 
                     verified += 1
                     self.update_state(
@@ -135,24 +140,14 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
             for pid, ipath in files.items():
 
                 # Copy files from irods into a local TMPDIR
-                filename = path.last_part(ipath)
-                local_file = path.build([local_zip_dir, filename])
+                filename = ipath.name
+                local_file = local_zip_dir.joinpath(filename)
 
-                #########################
-                #########################
-                # FIXME: can this have better performances?
-                #########################
-                if not path.file_exists_and_nonzero(local_file):
+                if not local_file.exists() or local_file.stat().st_size == 0:
                     try:
                         start_timeout(TIMEOUT)
                         with imain.get_dataobject(ipath).open("r") as source:
-                            # from python 3.6
-                            # with open(local_file, 'wb') as target:
-                            # up to python 3.5
-                            with open(str(local_file), "wb") as target:
-                                # for line in source:
-                                #     target.write(line)
-
+                            with open(local_file, "wb") as target:
                                 chunk_size = 10485760
                                 while True:
                                     data = source.read(chunk_size)
@@ -206,15 +201,21 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
             if counter > 0:
                 ##################
                 # Zip the dir
-                zip_local_file = path.join(local_dir, zip_file_name)
+                zip_local_file = local_dir.joinpath(zip_file_name)
                 log.debug("Zip local path: {}", zip_local_file)
-                if not path.file_exists_and_nonzero(zip_local_file):
-                    path.compress(str(local_zip_dir), str(zip_local_file))
+                if not zip_local_file.exists() or zip_local_file.stat().st_size == 0:
+                    base_zip_file_name, _ = os.path.splitext(zip_file_name)
+                    make_archive(
+                        base_name=base_zip_file_name,
+                        format="zip",
+                        root_dir=local_zip_dir,
+                    )
+
                     log.info("Compressed in: {}", zip_local_file)
 
                 ##################
                 # Copy the zip into irods
-                zip_ipath = path.join(order_path, zip_file_name, return_str=True)
+                zip_ipath = Path(order_path, zip_file_name)
                 # NOTE: always overwrite
                 try:
                     start_timeout(TIMEOUT)
@@ -232,20 +233,16 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
 
                     # Create a sub folder for split files. If already exists,
                     # remove it before to start from a clean environment
-                    split_path = path.join(local_dir, "unrestricted_zip_split")
-                    # split_path is an object
+                    split_path = local_dir.joinpath("unrestricted_zip_split")
                     rmtree(str(split_path), ignore_errors=True)
-                    # path create requires a path object
-                    path.create(split_path, directory=True, force=True)
-                    # path object is no longer required, cast to string
-                    split_path = str(split_path)
+                    split_path.mkdir()
 
                     # Execute the split of the whole zip
                     split_params = [
                         "-n",
                         MAX_ZIP_SIZE,
                         "-b",
-                        split_path,
+                        str(split_path),
                         zip_local_file,
                     ]
                     try:
@@ -295,12 +292,10 @@ def unrestricted_order(self, order_id, order_path, zip_file_name, myjson):
                                 extra=str(zip_local_file),
                             )
                         index = m.group(1).lstrip("0")
-                        subzip_path = path.join(split_path, subzip_file)
+                        subzip_path = split_path.joinjoin(subzip_file)
 
-                        subzip_ifile = path.append_compress_extension(
-                            f"{base_filename}{index}"
-                        )
-                        subzip_ipath = path.join(order_path, subzip_ifile)
+                        subzip_ifile = f"{base_filename}{index}.zip"
+                        subzip_ipath = Path(order_path, subzip_ifile)
 
                         log.info("Uploading {} -> {}", subzip_path, subzip_ipath)
                         try:

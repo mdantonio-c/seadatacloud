@@ -39,7 +39,6 @@ from seadata.endpoints import (
     EndpointsInputSchema,
     SeaDataEndpoint,
 )
-from seadata.endpoints.commons import path
 
 TMPDIR = "/tmp"
 
@@ -106,7 +105,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
             if zip_file_name is None:
                 raise BadRequest(f"Invalid file type {ftype}")
 
-            zip_ipath = path.join(order_path, zip_file_name, return_str=True)
+            zip_ipath = str(Path(order_path, zip_file_name))
 
             error = f"Order '{order_id}' not found (or no permissions)"
 
@@ -269,9 +268,8 @@ class BasketEndpoint(SeaDataEndpoint):
 
             ##################
             # Does the zip already exists?
-            # zip_file_name = path.append_compress_extension(order_id)
-            zip_file_name = path.append_compress_extension(filename)
-            zip_ipath = path.join(order_path, zip_file_name, return_str=True)
+            zip_file_name = filename + ".zip"
+            zip_ipath = str(Path(order_path, zip_file_name))
             if imain.is_dataobject(zip_ipath):
                 # give error here
                 # return {order_id: 'already exists'}
@@ -321,7 +319,7 @@ class BasketEndpoint(SeaDataEndpoint):
         if zip_file_name not in files:
             return None
 
-        zip_ipath = path.join(order_path, zip_file_name, return_str=True)
+        zip_ipath = str(Path(order_path, zip_file_name))
         log.debug("Zip irods path: {}", zip_ipath)
 
         code = self.no_slash_ticket(imain, zip_ipath)
@@ -481,7 +479,7 @@ class BasketEndpoint(SeaDataEndpoint):
         try:
             imain = irods.get_instance()
             order_path = self.get_irods_order_path(imain)
-            local_order_path = str(path.join(MOUNTPOINT, ORDERS_DIR))
+            local_order_path = str(Path(MOUNTPOINT, ORDERS_DIR))
             log.debug("Order collection: {}", order_path)
             log.debug("Order path: {}", local_order_path)
 

@@ -1,7 +1,9 @@
 import json
 import time
-from typing import Dict, List
+from pathlib import Path
+from typing import Any, Dict, List
 
+from celery.app.task import Task
 from restapi.connectors import redis
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
@@ -11,7 +13,6 @@ from seadata.connectors.b2handle import PIDgenerator
 from seadata.connectors.rabbit_queue import prepare_message
 from seadata.endpoints import ErrorCodes
 from seadata.endpoints import Metadata as md
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import ext_api, mybatchpath, notify_error
 
 pmaker = PIDgenerator()
@@ -20,13 +21,15 @@ TIMEOUT = 180
 
 
 @CeleryExt.task()
-def move_to_production_task(self, batch_id, batch_path, cloud_path, myjson):
+def move_to_production_task(
+    self: Task, batch_id: str, batch_path: str, cloud_path: str, myjson: Dict[str, Any]
+) -> str:
 
     self.update_state(state="STARTING", meta={"total": None, "step": 0, "errors": 0})
 
     ###############
     log.info("I'm {} (move_to_production_task)!", self.request.id)
-    local_path = path.join(mybatchpath, batch_id, return_str=True)
+    local_path = str(Path(mybatchpath, batch_id))
 
     try:
         with irods.get_instance() as imain:
@@ -58,11 +61,13 @@ def move_to_production_task(self, batch_id, batch_path, cloud_path, myjson):
 
                 temp_id = element.get("temp_id")  # do not pop
                 record_id = element.get("format_n_code")
-                current_file_name = path.last_part(temp_id)
-                local_element = path.join(local_path, temp_id, return_str=False)
+                local_element = Path(local_path, temp_id)
+                # it is not equal to temp_id !?
+                current_file_name = local_element.name
 
                 # [fs -> irods]
-                if path.file_exists_and_nonzero(local_element):
+                # Exists and has size greater than zero
+                if local_element.exists() and local_element.stat().st_size > 0:
                     log.info("Found: {}", local_element)
                 else:
                     log.error("NOT found: {}", local_element)
@@ -82,7 +87,7 @@ def move_to_production_task(self, batch_id, batch_path, cloud_path, myjson):
 
                 ###############
                 # 1. copy file (irods) [fs -> irods]
-                ifile = path.join(cloud_path, current_file_name, return_str=True)
+                ifile = str(Path(cloud_path, current_file_name))
                 for i in range(MAX_RETRIES):
                     try:
                         start_timeout(TIMEOUT)

@@ -1,6 +1,7 @@
 import hashlib
 import os
 import zipfile
+from pathlib import Path
 from shutil import rmtree
 
 import requests
@@ -9,7 +10,6 @@ from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.endpoints import ErrorCodes
-from seadata.endpoints.commons import path
 from seadata.tasks.seadata import ext_api, notify_error
 
 TIMEOUT = 180
@@ -178,7 +178,7 @@ def download_batch(self, batch_path, local_path, myjson):
                 )
 
             log.info("Request status = {}", r.status_code)
-            batch_file = path.join(local_path, file_name)
+            batch_file = Path(local_path, file_name)
 
             # from python 3.6
             # with open(batch_file, 'wb') as f:
@@ -227,13 +227,13 @@ def download_batch(self, batch_path, local_path, myjson):
 
             # 4 - decompress
             d = os.path.splitext(os.path.basename(str(batch_file)))[0]
-            local_unzipdir = path.join(local_path, d)
+            local_unzipdir = Path(local_path, d)
 
             if os.path.isdir(str(local_unzipdir)):
                 log.warning("{} already exist, removing it", local_unzipdir)
                 rmtree(str(local_unzipdir), ignore_errors=True)
 
-            path.create(local_unzipdir, directory=True, force=True)
+            local_unzipdir.mkdir()
             log.info("Local unzip dir = {}", local_unzipdir)
 
             log.info("Unzipping {}", batch_file)

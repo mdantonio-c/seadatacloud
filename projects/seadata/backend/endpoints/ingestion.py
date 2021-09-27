@@ -1,6 +1,7 @@
 """
 Ingestion process submission to upload the SeaDataNet marine data.
 """
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -30,7 +31,6 @@ from seadata.endpoints import (
     EndpointsInputSchema,
     SeaDataEndpoint,
 )
-from seadata.endpoints.commons import path
 
 ingestion_user = "RM"
 
@@ -58,7 +58,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             imain = irods.get_instance()
 
             batch_path = self.get_irods_batch_path(imain, batch_id)
-            local_path = path.join(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)
             log.info("Batch local path: {}", local_path)
 
@@ -117,7 +117,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
 
             batch_path = self.get_irods_batch_path(imain, batch_id)
             log.info("Batch irods path: {}", batch_path)
-            local_path = path.join(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch local path: {}", local_path)
 
             """
@@ -143,19 +143,9 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
                 log.warning("Irods batch collection {} already exists", batch_path)
 
             # Create the folder on filesystem
-            if not path.file_exists_and_nonzero(local_path):
-
-                # Create superdirectory and directory on file system:
+            if not local_path.exists():
                 try:
-                    # TODO: REMOVE THIS WHEN path.create() has parents=True!
-                    import os
-
-                    superdir = os.path.join(MOUNTPOINT, INGESTION_DIR)
-                    if not os.path.exists(superdir):
-                        log.debug("Creating {}...", superdir)
-                        os.mkdir(superdir)
-                        log.info("Created {}...", superdir)
-                    path.create(local_path, directory=True, force=True)
+                    local_path.mkdir(parents=True)
                 except (FileNotFoundError, PermissionError) as e:
                     log.info("Removing collection from irods ({})", batch_path)
                     imain.remove(batch_path, recursive=True, force=True)
@@ -196,7 +186,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
         try:
             imain = irods.get_instance()
             batch_path = self.get_irods_batch_path(imain)
-            local_batch_path = str(path.join(MOUNTPOINT, INGESTION_DIR))
+            local_batch_path = str(Path(MOUNTPOINT, INGESTION_DIR))
             log.debug("Batch collection: {}", batch_path)
             log.debug("Batch path: {}", local_batch_path)
 
