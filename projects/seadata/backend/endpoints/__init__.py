@@ -465,7 +465,7 @@ class ImportManagerAPI:
         self,
         payload: Dict[str, Any],
         backdoor: bool = False,
-        edmo_code: Optional[str] = None,
+        edmo_code: Optional[int] = None,
     ) -> bool:
 
         # timestamp '20180320T08:15:44' = YYMMDDTHH:MM:SS

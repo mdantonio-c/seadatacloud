@@ -119,21 +119,25 @@ def unrestricted_order(
                     log.warning("PID not found: {}", pid)
                 else:
                     pid_path = pmaker.parse_pid_dataobject_path(b2handle_output)
-                    log.debug("PID verified: {}\n({})", pid, pid_path)
-                    files[pid] = pid_path
-                    r.set(pid, str(pid_path))
-                    r.set(str(pid_path), pid)
 
-                    verified += 1
-                    self.update_state(
-                        state="PROGRESS",
-                        meta={
-                            "total": total,
-                            "step": counter,
-                            "verified": verified,
-                            "errors": len(errors),
-                        },
-                    )
+                    if not pid_path:
+                        log.error("Can't extract a PID from {}", b2handle_output)
+                    else:
+                        log.debug("PID verified: {}\n({})", pid, pid_path)
+                        files[pid] = pid_path
+                        r.set(pid, str(pid_path))
+                        r.set(str(pid_path), pid)
+
+                        verified += 1
+                        self.update_state(
+                            state="PROGRESS",
+                            meta={
+                                "total": total,
+                                "step": counter,
+                                "verified": verified,
+                                "errors": len(errors),
+                            },
+                        )
             log.info("Retrieved paths for {} PIDs", len(files))
 
             # Recover files
@@ -352,7 +356,7 @@ def unrestricted_order(
                 "zip": zip_ipath,
             }
             self.update_state(state="COMPLETED", meta=out)
-            return out
+
     except BaseException as e:
         log.error(e)
         log.error(type(e))

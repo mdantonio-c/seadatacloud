@@ -77,8 +77,8 @@ class PIDgenerator:
         """Parse url / irods path"""
 
         url = metadata.get(key)
-        if url is None:
-            return url
+        if not url:
+            return None
 
         # NOTE: this would only work until the protocol is unchanged
         url = url.replace("irods://", "")

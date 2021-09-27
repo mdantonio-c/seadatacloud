@@ -107,7 +107,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
             if zip_file_name is None:
                 raise BadRequest(f"Invalid file type {ftype}")
 
-            zip_ipath = str(Path(order_path, zip_file_name))
+            zip_ipath = Path(order_path, zip_file_name)
 
             error = f"Order '{order_id}' not found (or no permissions)"
 
@@ -209,10 +209,15 @@ class BasketEndpoint(SeaDataEndpoint):
                 if name.endswith("_restricted.zip.bak"):
                     continue
 
-                ipath = str(Path(data.get("path"), name))
-                metadata = imain.get_metadata(ipath)
-                data["URL"] = metadata.get("download")
-                response.append(data)
+                path = data.get("path")
+                if not path:  # pragma: no cover
+                    log.warning("Wrong entry, missing path: {}", data)
+                    continue
+                else:
+                    ipath = Path(path, name)
+                    metadata = imain.get_metadata(ipath)
+                    data["URL"] = metadata.get("download")
+                    response.append(data)
 
             msg = prepare_message(self, log_string="end", status="completed")
             log_into_queue(self, msg)

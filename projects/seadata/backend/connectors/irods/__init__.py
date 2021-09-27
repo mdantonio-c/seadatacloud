@@ -3,6 +3,7 @@ iRODS file-system flask connector
 """
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Union, cast
 
 from flask import Response, stream_with_context
@@ -134,25 +135,25 @@ class IrodsPythonExt(Connector):
             return True
         return False
 
-    def is_collection(self, path: str) -> bool:
+    def is_collection(self, path: Union[str, Path]) -> bool:
         try:
-            return self.prc.collections.exists(path)  # type: ignore
+            return self.prc.collections.exists(str(path))  # type: ignore
         except iexceptions.CAT_SQL_ERR as e:
             log.error("is_collection({}) raised CAT_SQL_ERR ({})", path, str(e))
             return False
 
-    def is_dataobject(self, path: str) -> bool:
+    def is_dataobject(self, path: Union[str, Path]) -> bool:
         try:
-            self.prc.data_objects.get(path)
+            self.prc.data_objects.get(str(path))
             return True
         except iexceptions.CollectionDoesNotExist:
             return False
         except iexceptions.DataObjectDoesNotExist:
             return False
 
-    def get_dataobject(self, path: str) -> DataObject:
+    def get_dataobject(self, path: Path) -> DataObject:
         try:
-            return self.prc.data_objects.get(path)
+            return self.prc.data_objects.get(str(path))
         except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
             raise IrodsException(f"{path} not found or no permissions")
 
@@ -443,13 +444,13 @@ class IrodsPythonExt(Connector):
             return f"{zone}/{suffix}"
         return zone
 
-    def get_metadata(self, path: str) -> Dict[str, str]:
+    def get_metadata(self, path: Union[str, Path]) -> Dict[str, str]:
 
         try:
             if self.is_collection(path):
-                obj = self.prc.collections.get(path)
+                obj = self.prc.collections.get(str(path))
             else:
-                obj = self.prc.data_objects.get(path)
+                obj = self.prc.data_objects.get(str(path))
 
             data = {}
             for meta in obj.metadata.items():
