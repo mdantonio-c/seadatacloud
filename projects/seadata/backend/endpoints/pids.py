@@ -8,6 +8,8 @@ https://github.com/EUDAT-B2STAGE/http-api/blob/master/docs/user/endpoints.md
 
 """
 
+from typing import cast
+
 from restapi import decorators
 from restapi.exceptions import BadRequest, NotFound
 from restapi.models import fields
@@ -64,6 +66,7 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
 
         for key, value in metadata.items():
             if key in Metadata.keys:
-                response["metadata"][str(key)] = value
+                k = cast(str, key)
+                response["metadata"][k] = value
 
         return self.response(response)
