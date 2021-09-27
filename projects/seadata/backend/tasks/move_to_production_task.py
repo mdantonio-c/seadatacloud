@@ -264,3 +264,5 @@ def move_to_production_task(
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

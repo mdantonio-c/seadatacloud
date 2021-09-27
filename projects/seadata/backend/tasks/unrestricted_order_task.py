@@ -292,7 +292,7 @@ def unrestricted_order(
                                 extra=str(zip_local_file),
                             )
                         index = m.group(1).lstrip("0")
-                        subzip_path = split_path.joinjoin(subzip_file)
+                        subzip_path = split_path.joinpath(subzip_file)
 
                         subzip_ifile = f"{base_filename}{index}.zip"
                         subzip_ipath = Path(order_path, subzip_ifile)
@@ -357,3 +357,5 @@ def unrestricted_order(
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

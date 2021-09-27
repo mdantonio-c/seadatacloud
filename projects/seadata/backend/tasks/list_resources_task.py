@@ -1,3 +1,6 @@
+from typing import Any, Dict
+
+from celery.app.task import Task
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
@@ -9,7 +12,9 @@ TIMEOUT = 180
 
 
 @CeleryExt.task()
-def list_resources(self, batch_path, order_path, myjson):
+def list_resources(
+    self: Task, batch_path: str, order_path: str, myjson: Dict[str, Any]
+) -> str:
 
     try:
         with irods.get_instance() as imain:
@@ -52,3 +57,5 @@ def list_resources(self, batch_path, order_path, myjson):
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

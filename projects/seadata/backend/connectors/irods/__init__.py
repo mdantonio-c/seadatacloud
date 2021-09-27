@@ -232,11 +232,9 @@ class IrodsPythonExt(Connector):
         # print("TEST", path, ignore_existing)
         try:
 
-            ret = self.prc.collections.create(  # type: ignore
-                path, recurse=ignore_existing
-            )
+            ret = self.prc.collections.create(path, recurse=ignore_existing)
             log.debug("Created irods collection: {}", path)
-            return ret
+            return cast(bool, ret)
 
         except iexceptions.CAT_UNKNOWN_COLLECTION:
             raise IrodsException("Unable to create collection, invalid path")
@@ -259,9 +257,9 @@ class IrodsPythonExt(Connector):
 
         try:
 
-            ret = self.prc.data_objects.create(path)  # type: ignore
+            ret = self.prc.data_objects.create(path)
             log.debug("Create irods object: {}", path)
-            return ret
+            return cast(bool, ret)
 
         except iexceptions.CAT_NO_ACCESS_PERMISSION:
             raise IrodsException("CAT_NO_ACCESS_PERMISSION")

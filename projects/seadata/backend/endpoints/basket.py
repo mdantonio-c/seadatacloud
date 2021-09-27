@@ -20,7 +20,7 @@ DELETE /api/order/<OID>
 # IMPORTS
 import urllib.parse
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 import requests
 from irods.exception import NetworkException
@@ -43,7 +43,9 @@ from seadata.endpoints import (
 TMPDIR = "/tmp"
 
 
-def get_order_zip_file_name(order_id, restricted=False, index=None):
+def get_order_zip_file_name(
+    order_id: str, restricted: bool = False, index: Optional[int] = None
+) -> str:
 
     index = "" if index is None else index
     label = "restricted" if restricted else "unrestricted"
@@ -152,7 +154,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
             }
             msg = prepare_message(self, json=json, log_string="end", status="sent")
             log_into_queue(self, msg)
-            return icom.stream_ticket(zip_ipath, headers=headers)  # type: ignore
+            return icom.stream_ticket(zip_ipath, headers=headers)
         except requests.exceptions.ReadTimeout:
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
@@ -293,7 +295,7 @@ class BasketEndpoint(SeaDataEndpoint):
         except requests.exceptions.ReadTimeout:
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
-    def no_slash_ticket(self, imain, path):
+    def no_slash_ticket(self, imain: irods.IrodsPythonExt, path: str) -> str:
         """irods ticket for HTTP"""
         # TODO: prc list tickets so we can avoid more than once
         # TODO: investigate iticket expiration
@@ -311,8 +313,14 @@ class BasketEndpoint(SeaDataEndpoint):
         return encoded
 
     def get_download(
-        self, imain, order_id, order_path, files, restricted=False, index=None
-    ):
+        self,
+        imain: irods.IrodsPythonExt,
+        order_id: str,
+        order_path: str,
+        files: Dict[str, Dict[str, Any]],
+        restricted: bool = False,
+        index: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
 
         zip_file_name = get_order_zip_file_name(order_id, restricted, index)
 

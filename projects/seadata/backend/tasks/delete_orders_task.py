@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
 from shutil import rmtree
-from typing import Dict, List
+from typing import Any, Dict, List
 
+from celery.app.task import Task
 from glom import glom
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
@@ -15,7 +16,9 @@ TIMEOUT = 180
 
 
 @CeleryExt.task()
-def delete_orders(self, orders_path, local_orders_path, myjson):
+def delete_orders(
+    self: Task, orders_path: str, local_orders_path: str, myjson: Dict[str, Any]
+) -> str:
 
     if "parameters" not in myjson:
         myjson["parameters"] = {}
@@ -116,3 +119,5 @@ def delete_orders(self, orders_path, local_orders_path, myjson):
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

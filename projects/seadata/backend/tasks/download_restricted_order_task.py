@@ -4,7 +4,7 @@ import re
 import zipfile
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from celery.app.task import Task
@@ -30,7 +30,7 @@ DOWNLOAD_HEADERS = {
 }
 
 
-def check_params(params):
+def check_params(params: Dict[str, Any]) -> Optional[Tuple[str, str]]:
     params_to_check = [
         "order_number",
         "download_path",
@@ -442,11 +442,7 @@ def download_restricted_order(
 
             self.update_state(state="COMPLETED")
 
-            if local_finalzip_path is None:
-                log.warning(
-                    "Local_finalzip_path is None, unable to check size of file zip"
-                )
-            elif os.path.getsize(str(local_finalzip_path)) > MAX_ZIP_SIZE:
+            if os.path.getsize(str(local_finalzip_path)) > MAX_ZIP_SIZE:
                 log.warning("Zip too large, splitting {}", local_finalzip_path)
 
                 # Create a sub folder for split files. If already exists,

@@ -11,7 +11,7 @@ from restapi.env import Env
 from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
-from seadata.connectors import irods
+from seadata.connectors import irods, sqlalchemy
 from webargs import fields as webargs_fields
 
 seadata_vars = Env.load_variables_group(prefix="seadata")
@@ -209,34 +209,33 @@ class SeaDataEndpoint(EndpointResource):
         self, imain: irods.IrodsPythonExt, irods_path: str, local_path: Path
     ) -> Tuple[int, List[str]]:
 
-        files = {}
         if not imain.is_collection(irods_path):
-            return MISSING_BATCH, files
+            return MISSING_BATCH, []
 
         if not local_path.exists():
-            return MISSING_BATCH, files
+            return MISSING_BATCH, []
 
-        files = imain.list(irods_path, detailed=True)
+        irods_files = imain.list(irods_path, detailed=True)
 
         # Too many files on irods
-        fnum = len(files)
+        fnum = len(irods_files)
         if fnum > 1:
-            return BATCH_MISCONFIGURATION, files
+            return BATCH_MISCONFIGURATION, irods_files
 
         # 1 file on irods -> everything is ok
         if fnum == 1:
-            return ENABLED_BATCH, files
+            return ENABLED_BATCH, irods_files
 
         # No files on irods, let's check on filesystem
-        files = []
+        fs_files = []
         for x in local_path.glob("*"):
             if x.is_file():
-                files.append(os.path.basename(str(x)))
-        fnum = len(files)
-        if fnum <= 0:
-            return NOT_FILLED_BATCH, files
+                fs_files.append(os.path.basename(str(x)))
 
-        return PARTIALLY_ENABLED_BATCH, files
+        if not fs_files:
+            return NOT_FILLED_BATCH, fs_files
+
+        return PARTIALLY_ENABLED_BATCH, fs_files
 
     def irods_user(self, username: str) -> str:
 
@@ -255,11 +254,12 @@ class SeaDataEndpoint(EndpointResource):
                 "authmethod": "irods",
             }
             user = self.auth.create_user(userdata, [self.auth.default_role])
+            sql = sqlalchemy.get_instance()
             try:
-                self.auth.db.session.commit()
+                sql.session.commit()
                 log.info("Cached iRODS user: {}", username)
             except BaseException as e:
-                self.auth.db.session.rollback()
+                sql.session.rollback()
                 log.error("Errors saving iRODS user: {}", username)
                 log.error(str(e))
                 log.error(type(e))
@@ -277,11 +277,11 @@ class SeaDataEndpoint(EndpointResource):
             user.first_login = now
         user.last_login = now
         try:
-            self.auth.db.session.add(user)
-            self.auth.db.session.commit()
+            sql.session.add(user)
+            sql.session.commit()
         except BaseException as e:
             log.error("DB error ({}), rolling back", e)
-            self.auth.db.session.rollback()
+            sql.session.rollback()
 
         self.auth.save_token(user, token, full_payload)
 

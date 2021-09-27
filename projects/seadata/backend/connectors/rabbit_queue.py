@@ -4,9 +4,9 @@ close the rabbit connection when the HTTP API finish
     - deconstructor in the flask ext?
     - check connection errors
 """
-
 import re
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 from flask import request
 from restapi.env import Env
@@ -24,7 +24,9 @@ QUEUE_VARS = Env.load_variables_group(prefix="rabbit")
 """
 
 
-def prepare_message(instance, user=None, get_json=False, **params):
+def prepare_message(
+    instance: Any, user: Optional[str] = None, get_json: bool = False, **params: Any
+) -> Dict[str, Any]:
     """
     { # start
         "request_id": # build a hash for the current request
@@ -93,7 +95,7 @@ It needs the following info from config:
 """
 
 
-def log_into_queue(instance, dictionary_message):
+def log_into_queue(instance: Any, dictionary_message: Dict[str, Any]) -> bool:
     """RabbitMQ in the EUDAT infrastructure"""
 
     # temporary disabled

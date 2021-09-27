@@ -3,8 +3,10 @@ import os
 import zipfile
 from pathlib import Path
 from shutil import rmtree
+from typing import Any, Dict
 
 import requests
+from celery.app.task import Task
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
@@ -25,7 +27,9 @@ DOWNLOAD_HEADERS = {
 
 
 @CeleryExt.task()
-def download_batch(self, batch_path, local_path, myjson):
+def download_batch(
+    self: Task, batch_path: str, local_path: str, myjson: Dict[str, Any]
+) -> str:
 
     log.info("I'm {} (download_batch)", self.request.id)
     log.info("Batch irods path: {}", batch_path)
@@ -324,3 +328,5 @@ def download_batch(self, batch_path, local_path, myjson):
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"
