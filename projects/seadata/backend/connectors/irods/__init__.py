@@ -53,7 +53,7 @@ class IrodsPythonExt(Connector):
         # Do not catch irods.exceptions.PAM_AUTH_PASSWORD_FAILED and
         # irods.expcetions.CAT_INVALID_AUTHENTICATION because they are used
         # by b2safeproxy to identify wrong credentials
-        return (
+        return (  # type: ignore
             ServiceUnavailable,
             AttributeError,
             FileNotFoundError,
@@ -279,14 +279,14 @@ class IrodsPythonExt(Connector):
         # NOTE: this action always overwrite
         self.prc.data_objects.put(local_path, irods_path)
 
-    def move(self, src_path: str, dest_path: str) -> None:
+    def move(self, src_path: Path, dest_path: Path) -> None:
 
         try:
             if self.is_collection(src_path):
-                self.prc.collections.move(src_path, dest_path)
+                self.prc.collections.move(str(src_path), str(dest_path))
                 log.debug("Renamed collection: {}->{}", src_path, dest_path)
             else:
-                self.prc.data_objects.move(src_path, dest_path)
+                self.prc.data_objects.move(str(src_path), str(dest_path))
                 log.debug("Renamed irods object: {}->{}", src_path, dest_path)
         except iexceptions.CAT_RECURSIVE_MOVE:
             raise IrodsException("Source and destination path are the same")
@@ -301,13 +301,15 @@ class IrodsPythonExt(Connector):
             log.error("{}({})", e.__class__.__name__, e)
             raise IrodsException("System error; failed to move.")
 
-    def remove(self, path: str, recursive: bool = False, force: bool = False) -> None:
+    def remove(
+        self, path: Union[str, Path], recursive: bool = False, force: bool = False
+    ) -> None:
         try:
             if self.is_collection(path):
-                self.prc.collections.remove(path, recurse=recursive, force=force)
+                self.prc.collections.remove(str(path), recurse=recursive, force=force)
                 log.debug("Removed irods collection: {}", path)
             else:
-                self.prc.data_objects.unlink(path, force=force)
+                self.prc.data_objects.unlink(str(path), force=force)
                 log.debug("Removed irods object: {}", path)
         except iexceptions.CAT_COLLECTION_NOT_EMPTY:
 
@@ -572,9 +574,9 @@ class IrodsPythonExt(Connector):
         ticket = Ticket(self.prc, code)
         ticket.supply()
 
-    def test_ticket(self, path: str) -> bool:
+    def test_ticket(self, path: Path) -> bool:
         try:
-            with self.prc.data_objects.open(path, "r") as obj:
+            with self.prc.data_objects.open(str(path), "r") as obj:
                 log.debug(obj.__class__.__name__)
         except iexceptions.SYS_FILE_DESC_OUT_OF_RANGE:
             return False
@@ -596,9 +598,9 @@ class IrodsPythonExt(Connector):
             yield data
 
     def stream_ticket(
-        self, path: str, headers: Optional[Dict[str, str]] = None
+        self, path: Path, headers: Optional[Dict[str, str]] = None
     ) -> Response:
-        obj = self.prc.data_objects.open(path, "r")
+        obj = self.prc.data_objects.open(str(path), "r")
         return Response(
             stream_with_context(self.read_in_chunks(obj, DEFAULT_CHUNK_SIZE)),
             headers=headers,

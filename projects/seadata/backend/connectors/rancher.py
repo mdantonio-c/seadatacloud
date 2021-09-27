@@ -175,7 +175,7 @@ class Rancher:
 
         for host_id, host_data in self.hosts().items():
 
-            host_name = host_data.get("name")
+            host_name = cast(str, host_data.get("name"))
             if "containers" not in host_data:
                 host_data["containers"] = {}
 

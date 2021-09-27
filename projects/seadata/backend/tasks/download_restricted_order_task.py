@@ -414,7 +414,7 @@ def download_restricted_order(
                 log.info("Creating a backup copy of final zip")
                 try:
                     start_timeout(TIMEOUT)
-                    backup_zip = final_zip + ".bak"
+                    backup_zip = final_zip.with_suffix(".bak")
                     if imain.is_dataobject(backup_zip):
                         log.info(
                             "{} already exists, removing previous backup",
@@ -532,8 +532,9 @@ def download_restricted_order(
 
             ret = ext_api.post(myjson, backdoor=backdoor, edmo_code=request_edmo_code)
             log.info("CDI IM CALL = {}", ret)
-            return "COMPLETED"
     except BaseException as e:
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

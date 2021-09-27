@@ -259,7 +259,6 @@ def move_to_production_task(
                 "out": out_data,
             }
             self.update_state(state="COMPLETED", meta=out)
-            return out
     except BaseException as e:
         log.error(e)
         log.error(type(e))

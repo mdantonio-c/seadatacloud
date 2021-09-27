@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
 from shutil import rmtree
-from typing import Dict, List
+from typing import Any, Dict, List
 
+from celery.app.task import Task
 from glom import glom
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
@@ -15,7 +16,9 @@ TIMEOUT = 180
 
 
 @CeleryExt.task()
-def delete_batches(self, batches_path, local_batches_path, myjson):
+def delete_batches(
+    self: Task, batches_path: str, local_batches_path: str, myjson: Dict[str, Any]
+) -> str:
 
     if "parameters" not in myjson:
         myjson["parameters"] = {}
