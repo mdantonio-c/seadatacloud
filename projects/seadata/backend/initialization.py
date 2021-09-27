@@ -7,7 +7,7 @@ from restapi.utilities.uuid import getUUID
 
 
 class Initializer:
-    def __init__(self):
+    def __init__(self) -> None:
 
         sql = sqlalchemy.get_instance()
 

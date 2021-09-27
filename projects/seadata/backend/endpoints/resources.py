@@ -9,11 +9,13 @@ from typing import Any
 
 import requests
 from restapi import decorators
+from restapi.env import Env
 from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
+from seadata.connectors.rancher import Rancher
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     INGESTION_DIR,
@@ -39,7 +41,8 @@ class Resources(SeaDataEndpoint):
         """Check my quality check container"""
 
         # log.info("Request for resources")
-        rancher = self.get_or_create_handle()
+        params = self.load_rancher_credentials()
+        rancher = Rancher(**params)
         container_name = self.get_container_name(batch_id, qc_name, rancher._qclabel)
         # resources = rancher.list()
         container = rancher.get_container_object(container_name)
@@ -144,7 +147,8 @@ class Resources(SeaDataEndpoint):
 
         ###################
         try:
-            rancher = self.get_or_create_handle()
+            params = self.load_rancher_credentials()
+            rancher = Rancher(**params)
         except BaseException as e:
             log.critical(str(e))
             raise ServiceUnavailable(
@@ -172,7 +176,8 @@ class Resources(SeaDataEndpoint):
 
         envs["BATCH_DIR_PATH"] = container_ingestion_path
         from seadata.connectors.rabbit_queue import QUEUE_VARS
-        from seadata.endpoints import CONTAINERS_VARS
+
+        CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
 
         for key, value in QUEUE_VARS.items():
             if key == "enable":
@@ -273,7 +278,8 @@ class Resources(SeaDataEndpoint):
         Remove a quality check executed
         """
 
-        rancher = self.get_or_create_handle()
+        params = self.load_rancher_credentials()
+        rancher = Rancher(**params)
         container_name = self.get_container_name(batch_id, qc_name, rancher._qclabel)
         rancher.remove_container_by_name(container_name)
         # wait up to 10 seconds to verify the deletion

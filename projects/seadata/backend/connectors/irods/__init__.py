@@ -11,7 +11,7 @@ from irods.access import iRODSAccess
 from irods.rule import Rule
 from irods.session import iRODSSession
 from irods.ticket import Ticket
-from restapi.connectors import Connector
+from restapi.connectors import Connector, ExceptionsList
 from restapi.env import Env
 from restapi.exceptions import RestApiException, ServiceUnavailable
 from restapi.utilities.logs import log
@@ -32,7 +32,7 @@ class IrodsException(RestApiException):
 # Excluded from coverage because it is only used by a very specific service
 # No further tests will be included in the core
 class IrodsPythonExt(Connector):
-    def __init__(self):
+    def __init__(self) -> None:
         self.prc_session = None
         super().__init__()
 
@@ -42,7 +42,7 @@ class IrodsPythonExt(Connector):
             return self.prc_session
         raise AttributeError("iRods sessions is unavailable, please connect the server")
 
-    def get_connection_exception(self):
+    def get_connection_exception(self) -> ExceptionsList:
         # Do not catch irods.exceptions.PAM_AUTH_PASSWORD_FAILED and
         # irods.expcetions.CAT_INVALID_AUTHENTICATION because they are used
         # by b2safeproxy to identify wrong credentials
@@ -53,7 +53,7 @@ class IrodsPythonExt(Connector):
             FileNotFoundError,
         )
 
-    def connect(self, **kwargs):
+    def connect(self, **kwargs: str) -> "IrodsPythonExt":
 
         variables = self.variables.copy()
         variables.update(kwargs)
@@ -113,12 +113,12 @@ class IrodsPythonExt(Connector):
 
         return self
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.disconnected = True
         if self.prc_session:
             self.prc_session.cleanup()
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
 
         return not self.disconnected
 

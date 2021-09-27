@@ -30,15 +30,15 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
 
     log.info("Task cache_batch_pids working on: {}", irods_path)
 
+    stats = {
+        "total": 0,
+        "skipped": 0,
+        "cached": 0,
+        "errors": 0,
+    }
+
     r = redis.get_instance().r
     with irods.get_instance() as imain:
-
-        stats = {
-            "total": 0,
-            "skipped": 0,
-            "cached": 0,
-            "errors": 0,
-        }
 
         try:
             start_timeout(TIMEOUT)
@@ -91,7 +91,7 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
 
         self.update_state(state="COMPLETED", meta=stats)
         log.info(stats)
-        return stats
+    return stats
 
 
 @CeleryExt.task()

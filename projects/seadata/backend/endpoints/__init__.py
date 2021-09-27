@@ -57,8 +57,6 @@ FS_PATH_IN_CONTAINER = "/usr/share/batch"
 # environmental variable passed to the container. But it is safe
 # to leave it hard-coded like this.
 
-CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
-
 
 class SeaDataEndpoint(EndpointResource):
     """
@@ -71,26 +69,12 @@ class SeaDataEndpoint(EndpointResource):
     _path_separator = "/"
     _post_delimiter = "?"
 
-    def load_credentials(self):
+    def load_rancher_credentials(self) -> Dict[str, str]:
 
         if not hasattr(self, "_credentials") or not self._credentials:
             self._credentials = Env.load_variables_group(prefix="resources")
 
         return self._credentials
-
-    def get_or_create_handle(self):
-        """
-        Create a Rancher object and feed it with
-        config that starts with "RESOURCES_",
-        including the localpath, which is
-        set to "/nfs/share".
-        """
-
-        # Import here to prevent circular imports
-        from seadata.connetors.rancher import Rancher
-
-        params = self.load_credentials()
-        return Rancher(**params)
 
     def get_ingestion_path_on_host(self, localpath: str, batch_id: str) -> str:
         """

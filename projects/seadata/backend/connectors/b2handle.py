@@ -4,7 +4,7 @@ B2HANDLE utilities
 
 import os
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 try:
     from b2handle.clientcredentials import PIDClientCredentials as credentials
@@ -71,7 +71,9 @@ class PIDgenerator:
         rule_output = icom.rule("get_pid", body, inputs, output=True)
         return self.pid_name_fix(rule_output)
 
-    def parse_pid_dataobject_path(self, metadata: Any, key: str = "URL") -> Path:
+    def parse_pid_dataobject_path(
+        self, metadata: Any, key: str = "URL"
+    ) -> Optional[Path]:
         """Parse url / irods path"""
 
         url = metadata.get(key)

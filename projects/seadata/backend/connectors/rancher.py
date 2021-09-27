@@ -12,8 +12,8 @@ import time
 from typing import Any, List
 
 import gdapi
+from restapi.env import Env
 from restapi.utilities.logs import log
-from seadata.endpoints import CONTAINERS_VARS
 
 # PERPAGE_LIMIT = 5
 # PERPAGE_LIMIT = 50
@@ -23,11 +23,8 @@ PERPAGE_LIMIT = 1000
 Container = Any
 
 
-# Dev note:
-# This object is initialized by get_or_create_handle() in
-# module "seadata/backend/endpoints/__init__.py".
-# It receives all config that starts with "RESOURCES".
 class Rancher:
+    # This receives all config envs that starts with "RESOURCES"
     def __init__(
         self, key, secret, url, project, hub, hubuser, hubpass, localpath, qclabel
     ):
@@ -290,6 +287,7 @@ class Rancher:
             return e.__dict__
         else:
 
+            CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
             # Should we wait for the container?
             if wait_stopped is None:
                 x = CONTAINERS_VARS.get("wait_stopped") or ""
@@ -402,7 +400,7 @@ class Rancher:
 
         return None
 
-    def remove_container_by_name(self, container_name):
+    def remove_container_by_name(self, container_name: str) -> bool:
         obj = self.get_container_object(container_name)
         if obj is not None:
             self._client.delete(obj)
@@ -411,7 +409,7 @@ class Rancher:
             log.warning("Did not found container: {}", container_name)
         return False
 
-    def test(self):
+    def test(self) -> None:
         # client.list_host()
         # client.list_project()
         # client.list_service()
