@@ -106,8 +106,9 @@ def delete_batches(
                 myjson["errors"] = errors
             ret = ext_api.post(myjson, backdoor=backdoor)
             log.info("CDI IM CALL = {}", ret)
-            return "COMPLETED"
     except BaseException as e:
         log.error(e)
         log.error(type(e))
         return notify_error(ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self)
+
+    return "ok"

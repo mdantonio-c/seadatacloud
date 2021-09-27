@@ -47,9 +47,11 @@ def get_order_zip_file_name(
     order_id: str, restricted: bool = False, index: Optional[int] = None
 ) -> str:
 
-    index = "" if index is None else index
     label = "restricted" if restricted else "unrestricted"
-    zip_file_name = f"order_{order_id}_{label}{index}.zip"
+    if index is None:
+        zip_file_name = f"order_{order_id}_{label}.zip"
+    else:
+        zip_file_name = f"order_{order_id}_{label}{index}.zip"
 
     return zip_file_name
 

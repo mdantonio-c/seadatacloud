@@ -2,7 +2,7 @@
 Ingestion process submission to upload the SeaDataNet marine data.
 """
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 import requests
 from irods.exception import NetworkException
@@ -83,7 +83,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
                     status_code=410,
                 )
 
-            data = {}
+            data: Dict[str, Any] = {}
             data["batch"] = batch_id
             if batch_status == NOT_FILLED_BATCH:
                 data["status"] = "not_filled"
