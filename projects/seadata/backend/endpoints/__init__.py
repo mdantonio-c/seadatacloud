@@ -7,11 +7,12 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 import pytz
 import requests
 from restapi.config import PRODUCTION
+from restapi.connectors import sqlalchemy
 from restapi.env import Env
 from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
-from seadata.connectors import irods, sqlalchemy
+from seadata.connectors import irods
 from webargs import fields as webargs_fields
 
 seadata_vars = Env.load_variables_group(prefix="seadata")
