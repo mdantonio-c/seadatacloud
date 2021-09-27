@@ -287,8 +287,8 @@ class SeaDataEndpoint(EndpointResource):
 
         return token
 
-    @staticmethod
-    def response(
+    def response(  # type: ignore
+        self,
         content: ResponseContent = None,
         errors: Optional[List[str]] = None,
         code: Optional[int] = None,
