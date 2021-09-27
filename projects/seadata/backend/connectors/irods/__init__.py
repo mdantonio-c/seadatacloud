@@ -3,7 +3,7 @@ iRODS file-system flask connector
 """
 import logging
 import os
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Union, cast
 
 from flask import Response, stream_with_context
 from irods import exception as iexceptions
@@ -34,13 +34,16 @@ class IrodsException(RestApiException):
 # Excluded from coverage because it is only used by a very specific service
 # No further tests will be included in the core
 class IrodsPythonExt(Connector):
+
+    prc_session: Optional[iRODSSession]
+
     def __init__(self) -> None:
         self.prc_session = None
         super().__init__()
 
     @property
     def prc(self) -> Any:
-        if self.prc_session:  # type: ignore
+        if self.prc_session:
             return self.prc_session
         raise AttributeError("iRods sessions is unavailable, please connect the server")
 
@@ -117,7 +120,7 @@ class IrodsPythonExt(Connector):
 
     def disconnect(self) -> None:
         self.disconnected = True
-        if self.prc_session:  # type: ignore
+        if self.prc_session:
             self.prc_session.cleanup()
 
     def is_connected(self) -> bool:
@@ -133,7 +136,7 @@ class IrodsPythonExt(Connector):
 
     def is_collection(self, path: str) -> bool:
         try:
-            return self.prc.collections.exists(path)
+            return self.prc.collections.exists(path)  # type: ignore
         except iexceptions.CAT_SQL_ERR as e:
             log.error("is_collection({}) raised CAT_SQL_ERR ({})", path, str(e))
             return False
@@ -229,7 +232,9 @@ class IrodsPythonExt(Connector):
         # print("TEST", path, ignore_existing)
         try:
 
-            ret = self.prc.collections.create(path, recurse=ignore_existing)
+            ret = self.prc.collections.create(  # type: ignore
+                path, recurse=ignore_existing
+            )
             log.debug("Created irods collection: {}", path)
             return ret
 
@@ -254,7 +259,7 @@ class IrodsPythonExt(Connector):
 
         try:
 
-            ret = self.prc.data_objects.create(path)
+            ret = self.prc.data_objects.create(path)  # type: ignore
             log.debug("Create irods object: {}", path)
             return ret
 
@@ -273,7 +278,7 @@ class IrodsPythonExt(Connector):
 
     def put(self, local_path: str, irods_path: str) -> None:
         # NOTE: this action always overwrite
-        return self.prc.data_objects.put(local_path, irods_path)
+        self.prc.data_objects.put(local_path, irods_path)
 
     def move(self, src_path: str, dest_path: str) -> None:
 
@@ -433,7 +438,7 @@ class IrodsPythonExt(Connector):
     def get_current_zone(
         self, prepend_slash: bool = False, suffix: Optional[str] = None
     ) -> str:
-        zone = self.prc.zone
+        zone = cast(str, self.prc.zone)
         if prepend_slash or suffix:
             zone = f"/{zone}"
         if suffix:
@@ -607,7 +612,7 @@ instance = IrodsPythonExt()
 def get_instance(
     verification: Optional[int] = None,
     expiration: Optional[int] = None,
-    **kwargs: Union[Optional[str], int],
+    **kwargs: str,
 ) -> "IrodsPythonExt":
 
     return instance.get_instance(

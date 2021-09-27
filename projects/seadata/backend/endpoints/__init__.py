@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import pytz
+import requests
+from restapi.config import PRODUCTION
 from restapi.env import Env
 from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
@@ -117,7 +119,12 @@ class SeaDataEndpoint(EndpointResource):
         # "/usr/share/batch" (hard-coded)
         return str(Path(FS_PATH_IN_CONTAINER))
 
-    def get_irods_path(self, irods_client, mypath, suffix=None):
+    def get_irods_path(
+        self,
+        irods_client: irods.IrodsPythonExt,
+        mypath: str,
+        suffix: Optional[str] = None,
+    ) -> str:
         """
         Helper to construct a path of a data object
         inside irods.
@@ -130,7 +137,9 @@ class SeaDataEndpoint(EndpointResource):
 
         return irods_client.get_current_zone(suffix=str(suffix_path))
 
-    def get_irods_production_path(self, irods_client, batch_id=None):
+    def get_irods_production_path(
+        self, irods_client: irods.IrodsPythonExt, batch_id: Optional[str] = None
+    ) -> str:
         """
         Return path of the batch inside irods, once the
         batch is in production.
@@ -143,7 +152,9 @@ class SeaDataEndpoint(EndpointResource):
         """
         return self.get_irods_path(irods_client, PRODUCTION_COLL, batch_id)
 
-    def get_irods_batch_path(self, irods_client, batch_id=None):
+    def get_irods_batch_path(
+        self, irods_client: irods.IrodsPythonExt, batch_id: Optional[str] = None
+    ) -> str:
         """
         Return path of the batch inside irods, before
         the batch goes to production.
@@ -156,7 +167,9 @@ class SeaDataEndpoint(EndpointResource):
         """
         return self.get_irods_path(irods_client, INGESTION_COLL, batch_id)
 
-    def get_irods_order_path(self, irods_client, order_id=None):
+    def get_irods_order_path(
+        self, irods_client: irods.IrodsPythonExt, order_id: Optional[str] = None
+    ) -> str:
         """
         Return path of the order inside irods.
 
@@ -225,7 +238,7 @@ class SeaDataEndpoint(EndpointResource):
 
         return PARTIALLY_ENABLED_BATCH, files
 
-    def irods_user(self, username):
+    def irods_user(self, username: str) -> str:
 
         user = self.auth.get_user(username)
 
@@ -272,10 +285,10 @@ class SeaDataEndpoint(EndpointResource):
 
         self.auth.save_token(user, token, full_payload)
 
-        return token, username
+        return token
 
+    @staticmethod
     def response(
-        self,
         content: ResponseContent = None,
         errors: Optional[List[str]] = None,
         code: Optional[int] = None,
@@ -447,7 +460,12 @@ class ImportManagerAPI:
 
     _uri = seadata_vars.get("api_im_url")
 
-    def post(self, payload, backdoor=False, edmo_code=None):
+    def post(
+        self,
+        payload: Dict[str, Any],
+        backdoor: bool = False,
+        edmo_code: Optional[int] = None,
+    ) -> bool:
 
         if edmo_code is None:
             edmo_code = EDMO_CODE
@@ -468,8 +486,6 @@ class ImportManagerAPI:
             log.info(payload)
             return False
 
-        from restapi.config import PRODUCTION
-
         if not PRODUCTION:
             log.warning(
                 "The following json should be sent to ImportManagerAPI, "
@@ -477,8 +493,6 @@ class ImportManagerAPI:
             )
             log.info(payload)
             return False
-
-        import requests
 
         # print("TEST", self._uri)
 

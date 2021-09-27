@@ -85,11 +85,11 @@ class B2safeProxy(SeaDataEndpoint):
         if not valid:
             raise Unauthorized("Failed to authenticate on B2SAFE")
 
-        token, irods_user = self.irods_user(username)
+        token = self.irods_user(username)
 
         imain = irods.get_instance()
 
-        user_home = imain.get_user_home(irods_user)
+        user_home = imain.get_user_home(username)
         if imain.is_collection(user_home):
             b2safe_home = user_home
         else:
@@ -97,7 +97,7 @@ class B2safeProxy(SeaDataEndpoint):
 
         response = {
             "token": token,
-            "b2safe_user": irods_user,
+            "b2safe_user": username,
             "b2safe_home": b2safe_home,
         }
 
