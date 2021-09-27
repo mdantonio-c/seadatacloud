@@ -159,7 +159,7 @@ def move_to_production_task(
                 for i in range(MAX_RETRIES):
                     try:
                         start_timeout(TIMEOUT)
-                        metadata, _ = imain.get_metadata(ifile)
+                        metadata = imain.get_metadata(ifile)
 
                         for key in md.keys:
                             if key not in metadata:

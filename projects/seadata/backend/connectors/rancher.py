@@ -8,8 +8,9 @@ API examples:
 https://github.com/rancher/validation-tests/tree/master/tests/v2_validation/cattlevalidationtest/core
 """
 
+import json
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import gdapi
 from restapi.env import Env
@@ -102,9 +103,8 @@ class Rancher:
         return hosts
 
     def obj_to_dict(self, obj: Any) -> Dict[str, Any]:
-        import json
 
-        return json.loads(obj.__repr__().replace("'", '"'))
+        return cast(Dict[str, Any], json.loads(obj.__repr__().replace("'", '"')))
 
     def all_containers_available(self) -> List[Container]:
         """
@@ -172,13 +172,12 @@ class Rancher:
 
         resources: Dict[str, Any] = {}
         containers = self.containers()
-        ckey = "containers"
 
         for host_id, host_data in self.hosts().items():
 
             host_name = host_data.get("name")
-            if ckey not in host_data:
-                host_data[ckey] = {}
+            if "containers" not in host_data:
+                host_data["containers"] = {}
 
             for container_id, container_data in containers.items():
                 if container_data.get("host") == host_id:
@@ -193,6 +192,10 @@ class Rancher:
         import websocket as ws
 
         container = self.get_container_object(container_name)
+        if not container:
+            log.warning("Container with name {} can't be found", container_name)
+            return ""
+
         logs = container.logs(follow=False, lines=100)
         uri = logs.url + "?token=" + logs.token
         sock = ws.create_connection(uri, timeout=15)
@@ -249,20 +252,18 @@ class Rancher:
         image_name: str,
         private: bool = False,
         extras: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    ) -> Optional[str]:
 
         ############
         if private:
             image_name_no_tags = image_name.split(":")[0]
             images_available = self.catalog_images()
 
-            error = None
             if images_available is None:
-                error = {"catalog": "Not reachable"}
-            elif image_name_no_tags not in images_available:
-                error = {"image": "Not found in our private catalog"}
-            if error is not None:
-                return {"error": error}
+                return "Catalog not reachable"
+
+            if image_name_no_tags not in images_available:
+                return "Image not found in our private catalog"
 
             # Add the prefix for private hub if it's there
             image_name = f"{self._hub_uri}/{image_name}"
@@ -289,8 +290,9 @@ class Rancher:
         try:
             container = self._client.create_container(**params)
         except ApiError as e:
-            log.error("Rancher fail: {}", e.__dict__)
-            return e.__dict__
+            error_message = f"Rancher failure: {e.__dict__}"
+            log.error(error_message)
+            return error_message
         else:
 
             CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
@@ -311,6 +313,11 @@ class Rancher:
                 # Wait for container to stop...
                 while True:
                     co = self.get_container_object(container_name)
+
+                    if not co:
+                        log.warning("{} can't be found", container_name)
+                        continue
+
                     log.debug(
                         'Container {}": {} ({}, {}: {})',
                         container_name,
@@ -323,9 +330,8 @@ class Rancher:
                     # Add errors returned by rancher to the errors object:
                     if isinstance(co.transitioningMessage, str):
                         if "error" in co.transitioningMessage.lower():
-                            error = {"container": co.transitioningMessage}
+                            log.error(co.transitioningMessage)
 
-                        # Simplify life of first-time deployers:
                         if (
                             self._hub_uri in co.transitioningMessage
                             and "no basic auth credentials" in co.transitioningMessage
@@ -338,8 +344,8 @@ class Rancher:
                     # Stop loop based on container state:
                     if co.state == "error" or co.state == "erroring":
                         log.error("Error in container!")
-                        error = {"container": co.transitioningMessage}
                         log.info("Detailed container info {}", co)
+                        log.error(co.transitioningMessage)
                         break
                     elif co.state == "stopped" and wait_stopped:
                         # even this does not guarantee success of operation inside container, of course!
@@ -405,8 +411,7 @@ class Rancher:
         return None
 
     def remove_container_by_name(self, container_name: str) -> bool:
-        obj = self.get_container_object(container_name)
-        if obj is not None:
+        if obj := self.get_container_object(container_name):
             self._client.delete(obj)
             return True
         else:

@@ -116,7 +116,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
 
             # TOFIX: we should use a database or cache to save this,
             # not irods metadata (known for low performances)
-            metadata, _ = imain.get_metadata(zip_ipath)
+            metadata = imain.get_metadata(zip_ipath)
             iticket_code = metadata.get("iticket_code")
 
             encoded_code = urllib.parse.quote_plus(code)
@@ -204,7 +204,7 @@ class BasketEndpoint(SeaDataEndpoint):
                     continue
 
                 ipath = str(Path(data.get("path"), name))
-                metadata, _ = imain.get_metadata(ipath)
+                metadata = imain.get_metadata(ipath)
                 data["URL"] = metadata.get("download")
                 response.append(data)
 

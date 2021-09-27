@@ -66,7 +66,7 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
 
             try:
                 start_timeout(TIMEOUT)
-                metadata, _ = imain.get_metadata(ifile)
+                metadata = imain.get_metadata(ifile)
                 pid = metadata.get("PID")
                 stop_timeout()
             except BaseException as e:

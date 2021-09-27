@@ -242,29 +242,17 @@ class Resources(SeaDataEndpoint):
 
         # log.info(extra_params)
         ###########################
-        errors = rancher.run(
+        error = rancher.run(
             container_name=container_name,
             image_name=docker_image_name,
             private=True,
             extras=extra_params,
         )
 
-        if errors is not None:
-            if isinstance(errors, dict):
-                edict = errors.get("error", {})
-
-                # This case should never happens, since already verified before
-                if edict.get("code") == "NotUnique":
-                    response["status"] = "existing"
-                    code = 409
-                else:
-                    response["status"] = "could NOT be started"
-                    response["description"] = edict
-                    code = 500
-            else:
-                response["status"] = "failure"
-                code = 500
-            return self.response(response, code=code)
+        if error:
+            response["status"] = "failure"
+            response["description"] = error
+            return self.response(response, code=500)
 
         return self.response(response)
 

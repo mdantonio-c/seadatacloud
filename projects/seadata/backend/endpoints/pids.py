@@ -56,7 +56,7 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
         }
 
         imain = irods.get_instance()
-        metadata, _ = imain.get_metadata(str(ipath))
+        metadata = imain.get_metadata(str(ipath))
 
         for key, value in metadata.items():
             if key in Metadata.keys:

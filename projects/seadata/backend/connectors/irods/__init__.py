@@ -3,7 +3,7 @@ iRODS file-system flask connector
 """
 import logging
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Union
 
 from flask import Response, stream_with_context
 from irods import exception as iexceptions
@@ -16,6 +16,8 @@ from restapi.env import Env
 from restapi.exceptions import RestApiException, ServiceUnavailable
 from restapi.utilities.logs import log
 
+# is python irods client typed !?
+DataObject = Any
 # Silence too much logging from irods
 irodslogger = logging.getLogger("irods")
 irodslogger.setLevel(logging.INFO)
@@ -115,28 +117,28 @@ class IrodsPythonExt(Connector):
 
     def disconnect(self) -> None:
         self.disconnected = True
-        if self.prc_session:
+        if self.prc_session:  # type: ignore
             self.prc_session.cleanup()
 
     def is_connected(self) -> bool:
 
         return not self.disconnected
 
-    def exists(self, path):
+    def exists(self, path: str) -> bool:
         if self.is_collection(path):
             return True
         if self.is_dataobject(path):
             return True
         return False
 
-    def is_collection(self, path):
+    def is_collection(self, path: str) -> bool:
         try:
             return self.prc.collections.exists(path)
         except iexceptions.CAT_SQL_ERR as e:
             log.error("is_collection({}) raised CAT_SQL_ERR ({})", path, str(e))
             return False
 
-    def is_dataobject(self, path):
+    def is_dataobject(self, path: str) -> bool:
         try:
             self.prc.data_objects.get(path)
             return True
@@ -145,7 +147,7 @@ class IrodsPythonExt(Connector):
         except iexceptions.DataObjectDoesNotExist:
             return False
 
-    def get_dataobject(self, path):
+    def get_dataobject(self, path: str) -> DataObject:
         try:
             return self.prc.data_objects.get(path)
         except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
@@ -213,14 +215,16 @@ class IrodsPythonExt(Connector):
         #     replicas.append(re.split("\s+", line.strip()))
         # return replicas
 
-    def create_empty(self, path, directory=False, ignore_existing=False):
+    def create_empty(
+        self, path: str, directory: bool = False, ignore_existing: bool = False
+    ) -> bool:
 
         if directory:
             return self.create_directory(path, ignore_existing)
         else:
             return self.create_file(path, ignore_existing)
 
-    def create_directory(self, path, ignore_existing=False):
+    def create_directory(self, path: str, ignore_existing: bool = False) -> bool:
 
         # print("TEST", path, ignore_existing)
         try:
@@ -244,9 +248,9 @@ class IrodsPythonExt(Connector):
         except (iexceptions.CAT_NO_ACCESS_PERMISSION, iexceptions.SYS_NO_API_PRIV):
             raise IrodsException(f"You have no permissions on path {path}")
 
-        return None
+        return False
 
-    def create_file(self, path, ignore_existing=False):
+    def create_file(self, path: str, ignore_existing: bool = False) -> bool:
 
         try:
 
@@ -267,11 +271,11 @@ class IrodsPythonExt(Connector):
 
         return False
 
-    def put(self, local_path, irods_path):
+    def put(self, local_path: str, irods_path: str) -> None:
         # NOTE: this action always overwrite
         return self.prc.data_objects.put(local_path, irods_path)
 
-    def move(self, src_path, dest_path):
+    def move(self, src_path: str, dest_path: str) -> None:
 
         try:
             if self.is_collection(src_path):
@@ -293,7 +297,7 @@ class IrodsPythonExt(Connector):
             log.error("{}({})", e.__class__.__name__, e)
             raise IrodsException("System error; failed to move.")
 
-    def remove(self, path, recursive=False, force=False, resource=None):
+    def remove(self, path: str, recursive: bool = False, force: bool = False) -> None:
         try:
             if self.is_collection(path):
                 self.prc.collections.remove(path, recurse=recursive, force=force)
@@ -312,15 +316,7 @@ class IrodsPythonExt(Connector):
         except iexceptions.CAT_NO_ROWS_FOUND:
             raise IrodsException("Irods delete error: path not found")
 
-        # FIXME: remove resource
-        # if resource is not None:
-        #     com = 'itrim'
-        #     args = ['-S', resource]
-
-        # Try with:
-        # self.prc.resources.remove(name, test=dryRunTrueOrFalse)
-
-    def write_file_content(self, path, content, position=0):
+    def write_file_content(self, path: str, content: str, position: int = 0) -> None:
         try:
             obj = self.prc.data_objects.get(path)
             with obj.open("w+") as handle:
@@ -372,7 +368,9 @@ class IrodsPythonExt(Connector):
                 raise IrodsException("Cannot set Inherit: path not found")
             raise IrodsException("Cannot set Inherit")
 
-    def create_collection_inheritable(self, ipath, user, permissions="own"):
+    def create_collection_inheritable(
+        self, ipath: str, user: str, permissions: str = "own"
+    ) -> None:
 
         # Create the directory
         self.create_empty(ipath, directory=True, ignore_existing=True)
@@ -432,7 +430,9 @@ class IrodsPythonExt(Connector):
 
         return os.path.join(zone, home, user)
 
-    def get_current_zone(self, prepend_slash=False, suffix=None):
+    def get_current_zone(
+        self, prepend_slash: bool = False, suffix: Optional[str] = None
+    ) -> str:
         zone = self.prc.zone
         if prepend_slash or suffix:
             zone = f"/{zone}"
@@ -440,7 +440,7 @@ class IrodsPythonExt(Connector):
             return f"{zone}/{suffix}"
         return zone
 
-    def get_metadata(self, path):
+    def get_metadata(self, path: str) -> Dict[str, str]:
 
         try:
             if self.is_collection(path):
@@ -449,17 +449,15 @@ class IrodsPythonExt(Connector):
                 obj = self.prc.data_objects.get(path)
 
             data = {}
-            units = {}
             for meta in obj.metadata.items():
                 name = meta.name
                 data[name] = meta.value
-                units[name] = meta.units
 
-            return data, units
+            return data
         except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
             raise IrodsException("Cannot extract metadata, object not found")
 
-    def remove_metadata(self, path, key):
+    def remove_metadata(self, path: str, key: str) -> None:
         if self.is_collection(path):
             obj = self.prc.collections.get(path)
         else:
@@ -473,7 +471,7 @@ class IrodsPythonExt(Connector):
         if tmp is not None:
             obj.metadata.remove(tmp)
 
-    def set_metadata(self, path, **meta):
+    def set_metadata(self, path: str, **meta: str) -> None:
         try:
             if self.is_collection(path):
                 obj = self.prc.collections.get(path)
@@ -487,7 +485,9 @@ class IrodsPythonExt(Connector):
         except iexceptions.DataObjectDoesNotExist:
             raise IrodsException("Cannot set metadata, object not found")
 
-    def rule(self, name, body, inputs, output=False):
+    def rule(
+        self, name: str, body: str, inputs: Dict[str, str], output: bool = False
+    ) -> Any:
 
         import textwrap
 
@@ -557,18 +557,18 @@ class IrodsPythonExt(Connector):
         # \"\"\"
         # output = imain.irule('test', body, inputs, 'ruleExecOut')
 
-    def ticket(self, path):
+    def ticket(self, path: str) -> Ticket:
         ticket = Ticket(self.prc)
         # print("TEST", self.prc, path)
         ticket.issue("read", path)
         return ticket
 
-    def ticket_supply(self, code):
+    def ticket_supply(self, code: str) -> None:
         # use ticket for access
         ticket = Ticket(self.prc, code)
         ticket.supply()
 
-    def test_ticket(self, path):
+    def test_ticket(self, path: str) -> bool:
         try:
             with self.prc.data_objects.open(path, "r") as obj:
                 log.debug(obj.__class__.__name__)
@@ -577,13 +577,13 @@ class IrodsPythonExt(Connector):
         else:
             return True
 
-    def read_in_chunks(self, file_object, chunk_size=None):
+    def read_in_chunks(
+        self, file_object: Any, chunk_size: int = DEFAULT_CHUNK_SIZE
+    ) -> Iterator[bytes]:
         """
         Lazy function (generator) to read a file piece by piece.
         Default chunk size: 1k.
         """
-        if chunk_size is None:
-            chunk_size = DEFAULT_CHUNK_SIZE
 
         while True:
             data = file_object.read(chunk_size)
@@ -591,7 +591,9 @@ class IrodsPythonExt(Connector):
                 break
             yield data
 
-    def stream_ticket(self, path, headers=None):
+    def stream_ticket(
+        self, path: str, headers: Optional[Dict[str, str]] = None
+    ) -> Response:
         obj = self.prc.data_objects.open(path, "r")
         return Response(
             stream_with_context(self.read_in_chunks(obj, DEFAULT_CHUNK_SIZE)),
