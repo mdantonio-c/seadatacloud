@@ -36,19 +36,17 @@ variables:
     TOKEN_SHORT_TTL: 259200
     ALLOW_ACCESS_TOKEN_PARAMETER: 1
 
+    ###############################
     ACTIVATE_ICAT: 0
-
+    IRODS_ENABLE_CONNECTOR: 1
     IRODS_USER: irods
     IRODS_PASSWORD: "**PLACEHOLDER**"
     IRODS_ZONE: tempZone
     IRODS_HOME: home
     IRODS_AUTHSCHEME: credentials
-
-    IRODS_ENABLE_CONNECTOR: 1
     IRODS_HOST: rodserver.dockerized.io
     IRODS_PORT: 1247
     IRODS_DB: ICAT
-
     IRODS_EXPIRATION_TIME: 7200
     IRODS_VERIFICATION_TIME: 900
     # anonymous user is used to download the orders via iticket
@@ -60,20 +58,23 @@ variables:
     ALCHEMY_DBS: "SQL_API ICAT"
     ###############################
 
-    SEADATA_EDMO_CODE:
+    SEADATA_EDMO_CODE: "**PLACEHOLDER**"
     # The names of the directories in the irods zone
     # for pre-production batches, for production batches,
     # and for orders being prepared.
-    SEADATA_INGESTION_COLL: batches # on irods!
-    SEADATA_ORDERS_COLL: orders # on irods!
-    SEADATA_PRODUCTION_COLL: cloud # on irods!
+    SEADATA_INGESTION_COLL: batches # on irods
+    SEADATA_ORDERS_COLL: orders # on irods
+    SEADATA_PRODUCTION_COLL: cloud # on irods
     SEADATA_PRIVILEGED_USERS: # command separated list of privileges users
 
     SEADATA_WORKSPACE_INGESTION: batches # on filesystem (to be mounted to celery workers and rancher containers)
     SEADATA_WORKSPACE_ORDERS: orders # on filesystem (to be mounted to celery workers and rancher containers)
-    # SEADATA_BATCH_PROD_FILES_COLL: production
-    ## IM APIs
     SEADATA_API_IM_URL: https://importmanager.seadatanet.org/api_v1
+    # This is the mount point of $RESOURCES_LOCALPATH inside the containers
+    # Note that this variable has only effect in backend and celery containers
+    # while QC containers uses an hard-code mount point (/usr/share)
+    SEADATA_RESOURCES_MOUNTPOINT: /usr/share
+
     ## RANCHER
     RESOURCES_URL: https://cattle.yourdomain.com/v2-beta
     RESOURCES_QCLABEL: qc
@@ -84,6 +85,16 @@ variables:
     RESOURCES_HUB:
     RESOURCES_HUBUSER:
     RESOURCES_HUBPASS:
+    CONTAINERS_WAIT_STOPPED: 0
+    CONTAINERS_WAIT_RUNNING: 0
+    # This path is the host directory that is bind-mounted
+    # into the Rancher containers and into the Celery
+    # worker containers. (Has to be the same, as they
+    # exchange data).
+    # This path needs permissions to user 1001
+    # as owner of subdir 'ingestion' and 'cloud'
+    RESOURCES_LOCALPATH: /nfs/share
+
     ## RABBIT SEADATA
     ACTIVATE_LOGGING_RABBIT: 0
     RABBIT_HOST: rabbit.b2host.org
@@ -94,38 +105,3 @@ variables:
     RABBIT_EXCHANGE: elkexchange
     RABBIT_QUEUE: elkqueue
     RABBIT_SSL_ENABLED: 0 # can be 0, 1, true, false
-    ## OTHERS
-    # REDIS_HOST: redis-cache-1
-    # CONTAINERS_RABBITUSER:
-    # CONTAINERS_RABBITPASS:
-    # CONTAINERS_DBUSER:
-    # CONTAINERS_DBPASS:
-    # CONTAINERS_DBEXTRAUSER:
-    # CONTAINERS_DBEXTRAPASS:
-    CONTAINERS_WAIT_STOPPED: 0
-    CONTAINERS_WAIT_RUNNING: 0
-
-    # This path is the host directory that is bind-mounted
-    # into the Rancher containers and into the Celery
-    # worker containers. (Has to be the same, as they
-    # exchange data).
-    # This path needs permissions to user 1001
-    # as owner of subdir 'ingestion' and 'cloud'
-    RESOURCES_LOCALPATH: /nfs/share
-    # This is the mount point of $RESOURCES_LOCALPATH inside the containers
-    # Note that this variable has only effect in backend and celery containers
-    # while QC containers uses an hard-code mount point (/usr/share)
-    SEADATA_RESOURCES_MOUNTPOINT: /usr/share
-
-    # EUDAT
-
-    ###############################
-    ## Experimental features
-    ENABLE_PUBLIC_ENDPOINT: 0 # experimental endpoint, depending on anonymous
-
-    API_MAIN_ENDPOINT: registered
-    API_PUBLIC_ENDPOINT: public
-
-    # TO BE DEPRECATED
-    HANDLE_CREDENTIALS_INTERNAL_PATH: /opt/certificates/b2handle
-    HANDLE_BASE: "https://url.to.epic/handles/"

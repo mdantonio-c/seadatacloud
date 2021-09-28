@@ -65,15 +65,10 @@ services:
     environment:
       MAIN_LOGIN_ENABLE: 0 # this could disable the basic /auth/login method
 
-      MAIN_ENDPOINT: ${API_MAIN_ENDPOINT}
-      PUBLIC_ENDPOINT: ${API_PUBLIC_ENDPOINT}
-      ENABLE_PUBLIC_ENDPOINT: ${ENABLE_PUBLIC_ENDPOINT}
-
       # db access
       ALCHEMY_ENABLE: 1
 
       # irods configuration
-
       IRODS_ENABLE: 1
       IRODS_HOST: ${IRODS_HOST}
       IRODS_PORT: ${IRODS_PORT}

@@ -297,11 +297,8 @@ class Rancher:
 
             CONTAINERS_VARS = Env.load_variables_group(prefix="containers")
             # Should we wait for the container?
-            x = CONTAINERS_VARS.get("wait_stopped") or ""
-            wait_stopped = not (x.lower() == "false" or int(x) == 0)
-
-            x = CONTAINERS_VARS.get("wait_running") or ""
-            wait_running = not (x.lower() == "false" or int(x) == 0)
+            wait_stopped = Env.to_bool(CONTAINERS_VARS.get("wait_stopped"))
+            wait_running = Env.to_bool(CONTAINERS_VARS.get("wait_running"))
 
             if wait_stopped or wait_running:
                 log.info(
