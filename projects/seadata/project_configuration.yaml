@@ -23,9 +23,6 @@ variables:
   env:
     SEADATA_API_VERSION: 1.2.1.0001
 
-    # To be removed
-    RUN_SCHEMATHESIS: 0
-
     LOG_LEVEL: INFO
     AUTH_SERVICE: sqlalchemy
     CELERY_BACKEND: REDIS
