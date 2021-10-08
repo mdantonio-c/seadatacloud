@@ -1,11 +1,11 @@
 import json
 
-from restapi.tests import API_URI, FlaskClient
+from restapi.tests import API_URI, Flask, FlaskClient
 from tests.custom import SeadataTests
 
 
 class TestApp(SeadataTests):
-    def test_01(self, client: FlaskClient) -> None:
+    def test_01(self, client: FlaskClient[Flask]) -> None:
 
         # POST /api/ingestion/my_batch_id/approve
         r = client.post(f"{API_URI}/ingestion/my_batch_id/approve")
