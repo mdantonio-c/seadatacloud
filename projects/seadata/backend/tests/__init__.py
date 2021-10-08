@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 from typing import Any, Dict, Union, cast
 
-from flask.wrappers import Response
 from restapi.env import Env
 from restapi.tests import AUTH_URI, BaseTests, FlaskClient
+from werkzeug.test import TestResponse as Response
 
 IRODS_USER = Env.get("IRODS_USER")
 IRODS_PASSWORD = Env.get("IRODS_PASSWORD")
