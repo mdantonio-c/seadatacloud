@@ -36,7 +36,7 @@ class IrodsException(RestApiException):
 # No further tests will be included in the core
 class IrodsPythonExt(Connector):
 
-    prc_session: Optional[iRODSSession]
+    prc_session: Optional[iRODSSession]  # type: ignore
 
     def __init__(self) -> None:
         self.prc_session = None
@@ -563,7 +563,7 @@ class IrodsPythonExt(Connector):
         # \"\"\"
         # output = imain.irule('test', body, inputs, 'ruleExecOut')
 
-    def ticket(self, path: str) -> Ticket:
+    def ticket(self, path: str) -> Ticket:  # type: ignore
         ticket = Ticket(self.prc)
         # print("TEST", self.prc, path)
         ticket.issue("read", path)
