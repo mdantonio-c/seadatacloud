@@ -52,8 +52,8 @@ def move_to_production_task(
                     ErrorCodes.MISSING_PIDS_LIST, myjson, backdoor, self
                 )
 
-            MAX_RETRIES = 3
-            SLEEP_TIME = 10
+            MAX_RETRIES = 5
+            SLEEP_TIME = 120
 
             r = redis.get_instance().r
 
