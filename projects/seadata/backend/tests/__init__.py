@@ -6,8 +6,8 @@ from restapi.env import Env
 from restapi.tests import AUTH_URI, BaseTests, FlaskClient
 from werkzeug.test import TestResponse as Response
 
-IRODS_USER = Env.get("IRODS_USER")
-IRODS_PASSWORD = Env.get("IRODS_PASSWORD")
+IRODS_USER = Env.get("IRODS_USER", "")
+IRODS_PASSWORD = Env.get("IRODS_PASSWORD", "")
 
 
 class SeadataTests(BaseTests):
