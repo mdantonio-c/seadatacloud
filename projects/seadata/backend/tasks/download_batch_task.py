@@ -1,9 +1,9 @@
 import hashlib
-import os
 import zipfile
 from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict
+from urllib.parse import urljoin
 
 import requests
 from celery.app.task import Task
@@ -141,7 +141,7 @@ def download_batch(
                 )
 
             # 1 - download the file
-            download_url = os.path.join(download_path, file_name)
+            download_url = urljoin(download_path, file_name)
             log.info("Downloading file from {}", download_url)
             try:
                 r = requests.get(
@@ -184,19 +184,14 @@ def download_batch(
             log.info("Request status = {}", r.status_code)
             batch_file = Path(local_path, file_name)
 
-            # from python 3.6
-            # with open(batch_file, 'wb') as f:
-            # up to python 3.5
-            with open(str(batch_file), "wb") as f:
+            with open(batch_file, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
             # 2 - verify checksum
             log.info("Computing checksum for {}...", batch_file)
-            local_file_checksum = hashlib.md5(
-                open(str(batch_file), "rb").read()
-            ).hexdigest()
+            local_file_checksum = hashlib.md5(open(batch_file, "rb").read()).hexdigest()
 
             if local_file_checksum.lower() != file_checksum.lower():
                 return notify_error(
@@ -210,7 +205,7 @@ def download_batch(
             log.info("File checksum verified for {}", batch_file)
 
             # 3 - verify size
-            local_file_size = os.path.getsize(str(batch_file))
+            local_file_size = batch_file.stat().st_size
             if local_file_size != int(file_size):
                 log.error(
                     "File size {} for {}, expected {}",
@@ -230,12 +225,11 @@ def download_batch(
             log.info("File size verified for {}", batch_file)
 
             # 4 - decompress
-            d = os.path.splitext(os.path.basename(str(batch_file)))[0]
-            local_unzipdir = Path(local_path, d)
+            local_unzipdir = Path(local_path, batch_file.stem)
 
-            if os.path.isdir(str(local_unzipdir)):
+            if local_unzipdir.is_dir():
                 log.warning("{} already exist, removing it", local_unzipdir)
-                rmtree(str(local_unzipdir), ignore_errors=True)
+                rmtree(local_unzipdir, ignore_errors=True)
 
             local_unzipdir.mkdir()
             log.info("Local unzip dir = {}", local_unzipdir)
@@ -243,7 +237,7 @@ def download_batch(
             log.info("Unzipping {}", batch_file)
             zip_ref = None
             try:
-                zip_ref = zipfile.ZipFile(str(batch_file), "r")
+                zip_ref = zipfile.ZipFile(batch_file, "r")
             except FileNotFoundError:
                 return notify_error(
                     ErrorCodes.UNZIP_ERROR_FILE_NOT_FOUND,
@@ -265,11 +259,11 @@ def download_batch(
                 )
 
             if zip_ref is not None:
-                zip_ref.extractall(str(local_unzipdir))
+                zip_ref.extractall(local_unzipdir)
                 zip_ref.close()
 
             # 6 - verify num files?
-            local_file_count = len(os.listdir(str(local_unzipdir)))
+            local_file_count = len(local_unzipdir.iterdir())
 
             log.info("Unzipped {} files from {}", local_file_count, batch_file)
 
@@ -286,7 +280,7 @@ def download_batch(
 
             log.info("File count verified for {}", batch_file)
 
-            rmtree(str(local_unzipdir), ignore_errors=True)
+            rmtree(local_unzipdir, ignore_errors=True)
 
             # 7 - copy file from B2HOST filesystem to irods
 
@@ -298,7 +292,7 @@ def download_batch(
             to the irods_path (usually /myzone/batches/<batch_id>)
             """
 
-            irods_batch_file = os.path.join(batch_path, file_name)
+            irods_batch_file = batch_path.joinpath(file_name)
             log.debug("Copying {} into {}...", batch_file, irods_batch_file)
 
             try:

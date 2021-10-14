@@ -212,10 +212,7 @@ def download_restricted_order(
             local_zip_path = local_dir.joinpath(file_name)
             log.info("partial_zip = {}", local_zip_path)
 
-            # from python 3.6
-            # with open(local_zip_path, 'wb') as f:
-            # up to python 3.5
-            with open(str(local_zip_path), "wb") as f:
+            with open(local_zip_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
@@ -223,7 +220,7 @@ def download_restricted_order(
             # 2 - verify checksum
             log.info("Computing checksum for {}...", local_zip_path)
             local_file_checksum = hashlib.md5(
-                open(str(local_zip_path), "rb").read()
+                open(local_zip_path, "rb").read()
             ).hexdigest()
 
             if local_file_checksum.lower() != file_checksum.lower():
@@ -271,7 +268,7 @@ def download_restricted_order(
             log.info("Unzipping {}", local_zip_path)
             zip_ref = None
             try:
-                zip_ref = zipfile.ZipFile(str(local_zip_path), "r")
+                zip_ref = zipfile.ZipFile(local_zip_path, "r")
             except FileNotFoundError:
                 return notify_error(
                     ErrorCodes.UNZIP_ERROR_FILE_NOT_FOUND,
@@ -368,7 +365,7 @@ def download_restricted_order(
                 log.info("Reading local zipfile")
                 zip_ref = None
                 try:
-                    zip_ref = zipfile.ZipFile(str(local_finalzip_path), "a")
+                    zip_ref = zipfile.ZipFile(local_finalzip_path, "a")
                 except FileNotFoundError:
                     log.error("Local file not found: {}", local_finalzip_path)
                     return notify_error(
