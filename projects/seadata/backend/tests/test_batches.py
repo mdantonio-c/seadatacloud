@@ -1,6 +1,7 @@
 import time
 
 from faker import Faker
+from restapi.env import Env
 from restapi.tests import API_URI, FlaskClient
 from tests.custom import SeadataTests
 
@@ -136,10 +137,21 @@ class TestApp(SeadataTests):
         assert isinstance(content["files"], dict)
         assert len(content["files"]) == 1
         assert file_name in content["files"]
-        assert content["files"][file_name] == ["debug code let me fail"]
+        assert isinstance(content["files"][file_name], dict)
+        assert "name" in content["files"][file_name]
+        assert "path" in content["files"][file_name]
+        assert "object_type" in content["files"][file_name]
+        assert "owner" in content["files"][file_name]
+        assert "content_length" in content["files"][file_name]
+        assert "created" in content["files"][file_name]
+        assert "last_modified" in content["files"][file_name]
+        assert content["files"][file_name]["name"] == file_name
+        assert content["files"][file_name]["path"] == file_name
+        assert content["files"][file_name]["owner"] == Env.get("IRODS_USER", "")
+        assert content["files"][file_name]["object_type"] == "dataobject"
+        assert content["files"][file_name]["content_length"] == file_size
 
-        # GET - valid batch - enabled
-
+        # DELETE BATCH
         parameters = {"batches": [batch_id], "backdoor": True}
         data = self.get_input_data(
             request_id=batch_id, api_function="delete_batch", parameters=parameters
@@ -149,5 +161,7 @@ class TestApp(SeadataTests):
         assert r.status_code == 200
 
         time.sleep(5)
+
+        # Verify batch is deleted
         r = client.get(f"{API_URI}/ingestion/{batch_id}", headers=headers)
         assert r.status_code == 404
