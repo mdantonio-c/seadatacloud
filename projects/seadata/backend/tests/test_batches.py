@@ -133,7 +133,10 @@ class TestApp(SeadataTests):
         assert "files" in content
         assert content["batch"] == batch_id
         assert content["status"] == "enabled"
-        assert content["files"] == ["debug code let me fail"]
+        assert isinstance(content["files"], dict)
+        assert len(content["files"]) == 1
+        assert file_name in content["files"]
+        assert content["files"][file_name] == ["debug code let me fail"]
 
         # GET - valid batch - enabled
 
