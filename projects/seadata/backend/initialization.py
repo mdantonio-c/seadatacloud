@@ -1,4 +1,4 @@
-from restapi.connectors import sqlalchemy
+from restapi.connectors import Connector, sqlalchemy
 from restapi.env import Env
 from restapi.services.authentication import Role
 from restapi.utilities.logs import log
@@ -16,8 +16,17 @@ class Initializer:
         if not users:  # pragma: no cover
             log.info("No privileged user found")
         else:
+
+            auth = Connector.get_authentication_instance()
+
             for username in users:
                 if username:
+                    if auth.get_user(username):
+                        log.warning(
+                            "Skipped cretion of user {}, already exists", username
+                        )
+                        continue
+
                     try:
                         log.info("Creating user {}", username)
                         userdata = {
