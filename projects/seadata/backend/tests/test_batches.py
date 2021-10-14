@@ -146,7 +146,7 @@ class TestApp(SeadataTests):
         assert "created" in content["files"][file_name]
         assert "last_modified" in content["files"][file_name]
         assert content["files"][file_name]["name"] == file_name
-        assert content["files"][file_name]["path"] == file_name
+        assert content["files"][file_name]["path"] == "/tempZone/batches"
         assert content["files"][file_name]["owner"] == Env.get("IRODS_USER", "")
         assert content["files"][file_name]["object_type"] == "dataobject"
         assert content["files"][file_name]["content_length"] == file_size
