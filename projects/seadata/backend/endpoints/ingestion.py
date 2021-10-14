@@ -97,7 +97,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             return self.response(data)
         except requests.exceptions.ReadTimeout:
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
-        except NetworkException as e:
+        except NetworkException as e:  # pragma: no cover
             log.error(e)
             raise ServiceUnavailable("Could not connect to B2SAFE host")
 
@@ -200,5 +200,5 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             )
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")

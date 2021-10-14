@@ -483,7 +483,7 @@ class BasketEndpoint(SeaDataEndpoint):
             return self.response(response)
         except requests.exceptions.ReadTimeout:
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
-        except NetworkException as e:
+        except NetworkException as e:  # pragma: no cover
             log.error(e)
             raise ServiceUnavailable("Could not connect to B2SAFE host")
 
