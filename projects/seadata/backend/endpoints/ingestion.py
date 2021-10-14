@@ -193,7 +193,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             c = celery.get_instance()
             task = c.celery_app.send_task(
                 "delete_batches",
-                args=[batch_path, local_batch_path, json_input],
+                args=[batch_path, str(local_batch_path), json_input],
                 queue="ingestion",
                 routing_key="ingestion",
             )
