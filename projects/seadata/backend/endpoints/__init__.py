@@ -124,7 +124,7 @@ class SeaDataEndpoint(EndpointResource):
         self,
         irods_client: irods.IrodsPythonExt,
         main_collection: str,  # oneof PRODUCTION_COLL, INGESTION_COLL, ORDERS_COLL
-        obj_id: str,  # one of batch_id or order_id or empty
+        obj_id: str = "",  # one of batch_id or order_id or empty
     ) -> str:
         """
         Helper to construct a path of a data object in irods
