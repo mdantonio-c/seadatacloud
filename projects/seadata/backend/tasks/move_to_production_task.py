@@ -11,9 +11,9 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.b2handle import PIDgenerator
 from seadata.connectors.rabbit_queue import prepare_message
-from seadata.endpoints import ErrorCodes
+from seadata.endpoints import INGESTION_DIR, MOUNTPOINT, ErrorCodes
 from seadata.endpoints import Metadata as md
-from seadata.tasks.seadata import ext_api, mybatchpath, notify_error
+from seadata.tasks.seadata import ext_api, notify_error
 
 pmaker = PIDgenerator()
 
@@ -29,7 +29,7 @@ def move_to_production_task(
 
     ###############
     log.info("I'm {} (move_to_production_task)!", self.request.id)
-    local_path = str(Path(mybatchpath, batch_id))
+    local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
 
     try:
         with irods.get_instance() as imain:
@@ -61,7 +61,7 @@ def move_to_production_task(
 
                 temp_id = element.get("temp_id")  # do not pop
                 record_id = element.get("format_n_code")
-                local_element = Path(local_path, temp_id)
+                local_element = local_path.joinpath(temp_id)
                 # it is not equal to temp_id !?
                 current_file_name = local_element.name
 

@@ -50,3 +50,10 @@ class TestApp(SeadataTests):
         assert isinstance(response, dict)
         self.check_endpoints_input_schema(response)
         """
+
+        # params = {
+        #     "eudat_backdoor": True, "request_id": batch_id, "edmo_code": 12345, "datetime": now,
+        #     "version": "1", "api_function": "qc",
+        #     "test_mode": "true", "parameters": {}
+        # }
+        # cmd = 'curl -X PUT -d "request_id=%s&edmo_code=12345&version=1&test_mode=True&eudat_backdoor=True&datetime=%s&api_function=qc&parameters={}" --header "Authorization: Bearer %s" %s/api/ingestion/%s/qc/ls:0.1' % (batch_id, now, token, URI, batch_id)

@@ -1,9 +1,10 @@
+from faker import Faker
 from restapi.tests import API_URI, FlaskClient
 from tests.custom import SeadataTests
 
 
 class TestApp(SeadataTests):
-    def test_01(self, client: FlaskClient) -> None:
+    def test_01(self, client: FlaskClient, faker: Faker) -> None:
 
         # GET /api/orders/my_order_id
         # PUT /api/orders/my_order_id
@@ -87,3 +88,43 @@ class TestApp(SeadataTests):
         assert r.status_code == 404
         error = "Order 'my_order_id' not found (or no permissions)"
         assert self.get_seadata_response(r) == error
+
+        # order_id = faker.pystr()
+        # pids = ["00.T12345/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"]
+        # params = {
+        #     "request_id": order_id, "edmo_code": 12345, "datetime": now,
+        #     "version": "1", "api_function": "order_create_zipfile",
+        #     "test_mode": "true", "parameters": {
+        #         "backdoor": True,
+        #         "login_code": "unknown", "restricted": "false",
+        #         "file_name": f"order_{order_id}_unrestricted",
+        #         "order_number": order_id, "pids": pids, "file_count": len(pids),
+        #     }
+        # }
+
+        # apiclient.call(
+        #     URI, method='post', endpoint='/api/orders',
+        #     token=token, payload=params
+        # )
+
+        # print_section("Request download links")
+        # # PUT /api/order/<OID> -> return iticket_code
+        # out = apiclient.call(
+        #     URI, method='put', endpoint='/api/orders/%s' % order_id,
+        #     token=token
+        # )
+
+        # # DELETE ORDER
+        # params = {
+        #     "request_id": order_id, "edmo_code": 634, "datetime": now,
+        #     "version": "1", "api_function": "delete_orders",
+        #     "test_mode": "true", "parameters": {
+        #         "orders": [order_id],
+        #         "backdoor": True
+        #     }
+        # }
+
+        # apiclient.call(
+        #     URI, method='delete', endpoint='/api/orders',
+        #     token=token, payload=params
+        # )

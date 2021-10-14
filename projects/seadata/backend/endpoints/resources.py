@@ -4,7 +4,6 @@ Launch containers for quality checks in Seadata
 import json
 import os
 import time
-from pathlib import Path
 from typing import Any
 
 import requests
@@ -96,7 +95,7 @@ class Resources(SeaDataEndpoint):
         try:
             imain = irods.get_instance()
             batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
-            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)
             log.info("Batch local path: {}", local_path)
             batch_status, batch_files = self.get_batch_status(
@@ -210,6 +209,7 @@ class Resources(SeaDataEndpoint):
         # Mount point of the json dir into the QC container
         QC_MOUNTPOINT = "/json"
 
+        # Note: MOUNTPOINT is a Path...
         json_path_backend = os.path.join(MOUNTPOINT, INGESTION_DIR, JSON_DIR)
 
         if not os.path.exists(json_path_backend):

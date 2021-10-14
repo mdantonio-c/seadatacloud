@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -6,28 +5,11 @@ from celery.app.task import Task
 from restapi.connectors.celery import CeleryExt
 from restapi.utilities.logs import log
 from seadata.connectors.b2handle import PIDgenerator
-from seadata.endpoints import ImportManagerAPI, seadata_vars
+from seadata.endpoints import ImportManagerAPI
 
 # Size in bytes
 # TODO: move me into the configuration
 MAX_ZIP_SIZE = 2147483648  # 2 gb
-####################
-
-"""
-These are the paths of the locations on the
-local filesystem inside the celery worker
-containers where the data is copied to / expected
-to reside.
-
-Note: The bind-mount from the host is defined
-in workers.yml, so if you change the /usr/local
-here, you need to change it there too.
-"""
-mount_point = seadata_vars.get("resources_mountpoint") or "/usr/share"
-middle_path_ingestion = seadata_vars.get("workspace_ingestion") or "ingestion"
-middle_path_orders = seadata_vars.get("workspace_orders") or "orders"
-mybatchpath = os.path.join(mount_point, middle_path_ingestion)
-myorderspath = os.path.join(mount_point, middle_path_orders)
 
 ext_api = ImportManagerAPI()
 

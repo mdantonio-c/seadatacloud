@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List
@@ -107,8 +106,8 @@ def delete_orders(
                     )
                     continue
 
-                if os.path.isdir(str(local_order_path)):
-                    rmtree(str(local_order_path), ignore_errors=True)
+                if local_order_path.isdir():
+                    rmtree(local_order_path, ignore_errors=True)
 
             if len(errors) > 0:
                 myjson["errors"] = errors

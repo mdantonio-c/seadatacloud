@@ -15,8 +15,8 @@ from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.irods import IrodsException
-from seadata.endpoints import ErrorCodes
-from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
+from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, ErrorCodes
+from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, notify_error
 
 TIMEOUT = 180
 
@@ -205,7 +205,7 @@ def download_restricted_order(
 
             log.info("Request status = {}", r.status_code)
 
-            local_dir = Path(myorderspath, order_id)
+            local_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
             local_dir.mkdir()
             log.info("Local dir = {}", local_dir)
 

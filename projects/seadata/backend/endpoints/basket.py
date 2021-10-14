@@ -499,7 +499,7 @@ class BasketEndpoint(SeaDataEndpoint):
         try:
             imain = irods.get_instance()
             order_path = self.get_irods_path(imain, ORDERS_COLL)
-            local_order_path = str(Path(MOUNTPOINT, ORDERS_DIR))
+            local_order_path = MOUNTPOINT.joinpath(ORDERS_DIR)
             log.debug("Order collection: {}", order_path)
             log.debug("Order path: {}", local_order_path)
 

@@ -1,7 +1,6 @@
 """
 Ingestion process submission to upload the SeaDataNet marine data.
 """
-from pathlib import Path
 from typing import Any, Dict
 
 import requests
@@ -59,7 +58,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             imain = irods.get_instance()
 
             batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
-            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)
             log.info("Batch local path: {}", local_path)
 
@@ -118,7 +117,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
 
             batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
             log.info("Batch irods path: {}", batch_path)
-            local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
+            local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
             log.info("Batch local path: {}", local_path)
 
             """
@@ -187,7 +186,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
         try:
             imain = irods.get_instance()
             batch_path = self.get_irods_path(imain, INGESTION_COLL)
-            local_batch_path = str(Path(MOUNTPOINT, INGESTION_DIR))
+            local_batch_path = MOUNTPOINT.joinpath(INGESTION_DIR)
             log.debug("Batch collection: {}", batch_path)
             log.debug("Batch path: {}", local_batch_path)
 

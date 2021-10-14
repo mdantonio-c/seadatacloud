@@ -15,8 +15,8 @@ from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 from seadata.connectors.b2handle import PIDgenerator, b2handle
 from seadata.connectors.rabbit_queue import prepare_message
-from seadata.endpoints import ErrorCodes
-from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, myorderspath, notify_error
+from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, ErrorCodes
+from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, notify_error
 
 TIMEOUT = 180
 
@@ -47,7 +47,7 @@ def unrestricted_order(
 
     ##################
     # SETUP
-    local_dir = Path(myorderspath, order_id)
+    local_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
     local_zip_dir = local_dir.joinpath("tobezipped")
     local_zip_dir.mkdir(parents=True)
 

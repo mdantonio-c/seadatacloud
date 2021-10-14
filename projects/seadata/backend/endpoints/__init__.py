@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
@@ -36,7 +35,7 @@ They are being defined project_configuration.yml / .projectrc
 INGESTION_COLL = seadata_vars.get("ingestion_coll") or "batches"
 ORDERS_COLL = seadata_vars.get("orders_coll") or "orders"
 PRODUCTION_COLL = seadata_vars.get("production_coll") or "cloud"
-MOUNTPOINT = seadata_vars.get("resources_mountpoint") or "/usr/share"
+MOUNTPOINT = Path(seadata_vars.get("resources_mountpoint") or "/usr/share")
 
 """
 These are the paths to the data on the hosts
@@ -180,7 +179,7 @@ class SeaDataEndpoint(EndpointResource):
         fs_files = []
         for x in local_path.glob("*"):
             if x.is_file():
-                fs_files.append(os.path.basename(str(x)))
+                fs_files.append(x.name)
 
         if not fs_files:
             return NOT_FILLED_BATCH, fs_files
