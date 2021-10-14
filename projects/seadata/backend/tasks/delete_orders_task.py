@@ -106,7 +106,7 @@ def delete_orders(
                     )
                     continue
 
-                if local_order_path.isdir():
+                if local_order_path.is_dir():
                     rmtree(local_order_path, ignore_errors=True)
 
             if len(errors) > 0:
