@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Any, Dict, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 
 from restapi.env import Env
 from restapi.tests import AUTH_URI, BaseTests, FlaskClient
@@ -61,13 +61,22 @@ class SeadataTests(BaseTests):
         assert "version" in response
         assert "Missing data for required field." in response["version"]
 
-    def get_input_data(self) -> Dict[str, Union[bool, int, str]]:
+    def get_input_data(
+        self,
+        request_id: str = "my_request_id",
+        api_function: str = "my_api_function",
+        parameters: Optional[Any] = None,
+    ) -> Dict[str, Union[bool, int, str]]:
+        if parameters is None:
+            parameters = {}
+        parameters["backdoor"] = True
+
         data: Dict[str, Union[bool, int, str]] = {
-            "api_function": "my_api_function",
+            "api_function": api_function,
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%s"),
             "edmo_code": 1234,
-            "parameters": json.dumps({}),
-            "request_id": "my_request_id",
+            "parameters": json.dumps(parameters),
+            "request_id": request_id,
             "test_mode": "1",
             "version": "1",
             "eudat_backdoor": True,

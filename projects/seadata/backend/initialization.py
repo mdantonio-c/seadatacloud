@@ -1,6 +1,5 @@
-import os
-
 from restapi.connectors import sqlalchemy
+from restapi.env import Env
 from restapi.services.authentication import Role
 from restapi.utilities.logs import log
 from restapi.utilities.uuid import getUUID
@@ -11,41 +10,34 @@ class Initializer:
 
         sql = sqlalchemy.get_instance()
 
-        privileged_users = os.getenv("SEADATA_PRIVILEGED_USERS")
+        users = Env.get("SEADATA_PRIVILEGED_USERS", "").replace(" ", "").split(",")
 
-        if not privileged_users:
-            users = []
-        else:
-            users = privileged_users.replace(" ", "").split(",")
         roles = [Role.USER, Role.STAFF]
-        if len(users) == 0:
+        if not users:  # pragma: no cover
             log.info("No privileged user found")
         else:
             for username in users:
-
-                if username == "":
-                    log.warning("Invalid username: [{}]", username)
-                    continue
-                try:
-                    log.info("Creating user {}", username)
-                    userdata = {
-                        "uuid": getUUID(),
-                        "email": username,
-                        "name": username,
-                        # password parameters will not be used because its a b2safe user
-                        "password": username,
-                        "surname": "iCAT",
-                        "authmethod": "irods",
-                    }
-                    user = sql.User(**userdata)
-                    for r in roles:
-                        role = sql.Role.query.filter_by(name=r.value).first()
-                        user.roles.append(role)
-                    sql.session.add(user)
-                    sql.session.commit()
-                    log.info("User {} created with roles: {}", username, roles)
-                except BaseException as e:
-                    log.error("Errors creating user {}: {}", username, str(e))
+                if username:
+                    try:
+                        log.info("Creating user {}", username)
+                        userdata = {
+                            "uuid": getUUID(),
+                            "email": username,
+                            "name": username,
+                            # password parameters will not be used witj b2safe users
+                            "password": username,
+                            "surname": "iCAT",
+                            "authmethod": "irods",
+                        }
+                        user = sql.User(**userdata)
+                        for r in roles:
+                            role = sql.Role.query.filter_by(name=r.value).first()
+                            user.roles.append(role)
+                        sql.session.add(user)
+                        sql.session.commit()
+                        log.info("User {} created with roles: {}", username, roles)
+                    except BaseException as e:
+                        log.error("Errors creating user {}: {}", username, str(e))
 
     # This method is called after normal initialization if TESTING mode is enabled
     def initialize_testing_environment(self) -> None:

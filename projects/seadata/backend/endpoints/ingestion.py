@@ -146,7 +146,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             if not local_path.exists():
                 try:
                     local_path.mkdir(parents=True)
-                except (FileNotFoundError, PermissionError) as e:
+                except (FileNotFoundError, PermissionError) as e:  # pragma: no cover
                     log.info("Removing collection from irods ({})", batch_path)
                     imain.remove(batch_path, recursive=True, force=True)
                     raise ServerError(f"Could not create directory {local_path} ({e})")
@@ -171,7 +171,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
             )
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     @decorators.auth.require()
