@@ -157,7 +157,7 @@ class TestApp(SeadataTests):
             request_id=batch_id, api_function="delete_batch", parameters=parameters
         )
 
-        r = client.delete(f"{API_URI}/ingestion/{batch_id}", headers=headers, data=data)
+        r = client.delete(f"{API_URI}/ingestion", headers=headers, data=data)
         assert r.status_code == 200
 
         time.sleep(5)

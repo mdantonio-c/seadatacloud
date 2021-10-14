@@ -370,7 +370,7 @@ class EndpointsInputSchema(Schema):
     version = fields.Str(required=True)
     test_mode = fields.Str(required=True)
 
-    eudat_backdoor = fields.Bool(required=False, missing=False)
+    eudat_backdoor = fields.Bool(required=False, load_default=False)
 
     parameters = Parameter(required=True)
 
