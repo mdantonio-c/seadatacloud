@@ -23,6 +23,7 @@ from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     ENABLED_BATCH,
+    INGESTION_COLL,
     INGESTION_DIR,
     MISSING_BATCH,
     MOUNTPOINT,
@@ -57,7 +58,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
         try:
             imain = irods.get_instance()
 
-            batch_path = self.get_irods_batch_path(imain, batch_id)
+            batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
             local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch irods path: {}", batch_path)
             log.info("Batch local path: {}", local_path)
@@ -115,7 +116,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
         try:
             imain = irods.get_instance()
 
-            batch_path = self.get_irods_batch_path(imain, batch_id)
+            batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
             log.info("Batch irods path: {}", batch_path)
             local_path = Path(MOUNTPOINT, INGESTION_DIR, batch_id)
             log.info("Batch local path: {}", local_path)
@@ -185,7 +186,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
 
         try:
             imain = irods.get_instance()
-            batch_path = self.get_irods_batch_path(imain)
+            batch_path = self.get_irods_path(imain, INGESTION_COLL)
             local_batch_path = str(Path(MOUNTPOINT, INGESTION_DIR))
             log.debug("Batch collection: {}", batch_path)
             log.debug("Batch path: {}", local_batch_path)

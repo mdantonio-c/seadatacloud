@@ -8,7 +8,12 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import EndpointsInputSchema, SeaDataEndpoint
+from seadata.endpoints import (
+    INGESTION_COLL,
+    ORDERS_COLL,
+    EndpointsInputSchema,
+    SeaDataEndpoint,
+)
 
 
 class ListResources(SeaDataEndpoint):
@@ -30,8 +35,8 @@ class ListResources(SeaDataEndpoint):
             task = c.celery_app.send_task(
                 "list_resources",
                 args=[
-                    self.get_irods_batch_path(imain),
-                    self.get_irods_order_path(imain),
+                    self.get_irods_path(imain, INGESTION_COLL),
+                    self.get_irods_path(imain, ORDERS_COLL),
                     json_input,
                 ],
             )

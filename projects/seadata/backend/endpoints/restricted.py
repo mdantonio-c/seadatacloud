@@ -9,7 +9,7 @@ from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import EndpointsInputSchema, SeaDataEndpoint
+from seadata.endpoints import ORDERS_COLL, EndpointsInputSchema, SeaDataEndpoint
 
 
 class Restricted(SeaDataEndpoint, Uploader):
@@ -28,7 +28,7 @@ class Restricted(SeaDataEndpoint, Uploader):
 
         try:
             imain = irods.get_instance()
-            order_path = self.get_irods_order_path(imain, order_id)
+            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
             if not imain.is_collection(order_path):
                 # Create the path and set permissions
                 imain.create_collection_inheritable(order_path, user.email)

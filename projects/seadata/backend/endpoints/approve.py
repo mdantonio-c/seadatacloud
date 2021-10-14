@@ -11,7 +11,7 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import EndpointsInputSchema
+from seadata.endpoints import INGESTION_COLL, PRODUCTION_COLL, EndpointsInputSchema
 from seadata.endpoints import Metadata as md
 from seadata.endpoints import SeaDataEndpoint
 
@@ -65,7 +65,7 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
         # 1. check if irods path exists
         try:
             imain = irods.get_instance()
-            batch_path = self.get_irods_batch_path(imain, batch_id)
+            batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
             log.debug("Batch path: {}", batch_path)
 
             if not imain.is_collection(batch_path):
@@ -75,7 +75,7 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
 
             ################
             # 2. make batch_id directory in production if not existing
-            prod_path = self.get_irods_production_path(imain, batch_id)
+            prod_path = self.get_irods_path(imain, PRODUCTION_COLL, batch_id)
             log.debug("Production path: {}", prod_path)
             imain.create_collection_inheritable(prod_path, user.email)
 

@@ -35,6 +35,7 @@ from seadata.connectors import irods
 from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
 from seadata.endpoints import (
     MOUNTPOINT,
+    ORDERS_COLL,
     ORDERS_DIR,
     EndpointsInputSchema,
     SeaDataEndpoint,
@@ -102,7 +103,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
 
         try:
             imain = irods.get_instance()
-            order_path = self.get_irods_order_path(imain, order_id)
+            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
 
             zip_file_name = self.get_filename_from_type(order_id, ftype)
 
@@ -180,7 +181,7 @@ class BasketEndpoint(SeaDataEndpoint):
 
         try:
             imain = irods.get_instance()
-            order_path = self.get_irods_order_path(imain, order_id)
+            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
             log.debug("Order path: {}", order_path)
             if not imain.is_collection(order_path):
                 raise NotFound(f"Order '{order_id}': not existing")
@@ -273,7 +274,7 @@ class BasketEndpoint(SeaDataEndpoint):
         log.info("Order request: {}", order_id)
         try:
             imain = irods.get_instance()
-            order_path = self.get_irods_order_path(imain, order_id)
+            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
             log.debug("Order path: {}", order_path)
             if not imain.is_collection(order_path):
                 # Create the path and set permissions
@@ -391,7 +392,7 @@ class BasketEndpoint(SeaDataEndpoint):
         try:
             imain = irods.get_instance()
             try:
-                order_path = self.get_irods_order_path(imain, order_id)
+                order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
                 log.debug("Order path: {}", order_path)
             except BaseException:
                 raise NotFound("Order not found")
@@ -497,7 +498,7 @@ class BasketEndpoint(SeaDataEndpoint):
 
         try:
             imain = irods.get_instance()
-            order_path = self.get_irods_order_path(imain)
+            order_path = self.get_irods_path(imain, ORDERS_COLL)
             local_order_path = str(Path(MOUNTPOINT, ORDERS_DIR))
             log.debug("Order collection: {}", order_path)
             log.debug("Order path: {}", local_order_path)

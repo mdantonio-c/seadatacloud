@@ -437,7 +437,7 @@ class IrodsPythonExt(Connector):
         return os.path.join(zone, home, user)
 
     def get_current_zone(
-        self, prepend_slash: bool = False, suffix: Optional[str] = None
+        self, prepend_slash: bool = False, suffix: Optional[Path] = None
     ) -> str:
         zone = cast(str, self.prc.zone)
         if prepend_slash or suffix:

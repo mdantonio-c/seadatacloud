@@ -1,5 +1,3 @@
-import os
-
 import requests
 from restapi import decorators
 from restapi.connectors import celery
@@ -8,7 +6,7 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import SeaDataEndpoint
+from seadata.endpoints import PRODUCTION_COLL, SeaDataEndpoint
 
 
 class PidCache(SeaDataEndpoint):
@@ -38,9 +36,8 @@ class PidCache(SeaDataEndpoint):
 
         try:
             imain = irods.get_instance()
-            ipath = self.get_irods_production_path(imain)
+            collection = self.get_irods_path(imain, PRODUCTION_COLL, batch_id)
 
-            collection = os.path.join(ipath, batch_id)
             if not imain.exists(collection):
                 raise NotFound(f"Invalid batch id {batch_id}")
 

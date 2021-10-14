@@ -123,64 +123,13 @@ class SeaDataEndpoint(EndpointResource):
     def get_irods_path(
         self,
         irods_client: irods.IrodsPythonExt,
-        mypath: str,
-        suffix: Optional[str] = None,
+        main_collection: str,  # oneof PRODUCTION_COLL, INGESTION_COLL, ORDERS_COLL
+        obj_id: str,  # one of batch_id or order_id or empty
     ) -> str:
         """
-        Helper to construct a path of a data object
-        inside irods.
-
-        Note: Helper, only used inside this file.
+        Helper to construct a path of a data object in irods
         """
-        suffix_path = Path(mypath)
-        if suffix:
-            suffix_path.joinpath(suffix)
-
-        return irods_client.get_current_zone(suffix=str(suffix_path))
-
-    def get_irods_production_path(
-        self, irods_client: irods.IrodsPythonExt, batch_id: Optional[str] = None
-    ) -> str:
-        """
-        Return path of the batch inside irods, once the
-        batch is in production.
-
-        It consists of the irods zone (retrieved from
-        the irods client object), the production batch
-        directory (from config) and the batch_id if given.
-
-        Example: /myIrodsZone/cloud/<batch_id>
-        """
-        return self.get_irods_path(irods_client, PRODUCTION_COLL, batch_id)
-
-    def get_irods_batch_path(
-        self, irods_client: irods.IrodsPythonExt, batch_id: Optional[str] = None
-    ) -> str:
-        """
-        Return path of the batch inside irods, before
-        the batch goes to production.
-
-        It consists of the irods zone (retrieved from
-        the irods client object), the ingestion batch
-        directory (from config) and the batch_id if given.
-
-        Example: /myIrodsZone/batches/<batch_id>
-        """
-        return self.get_irods_path(irods_client, INGESTION_COLL, batch_id)
-
-    def get_irods_order_path(
-        self, irods_client: irods.IrodsPythonExt, order_id: Optional[str] = None
-    ) -> str:
-        """
-        Return path of the order inside irods.
-
-        It consists of the irods zone (retrieved from
-        the irods client object), the order directory
-        (from config) and the order_id if given.
-
-        Example: /myIrodsZone/orders/<order_id>
-        """
-        return self.get_irods_path(irods_client, ORDERS_COLL, order_id)
+        return irods_client.get_current_zone(suffix=Path(main_collection, obj_id))
 
     def return_async_id(self, request_id: str) -> Response:
         # dt = "20170712T15:33:11"
