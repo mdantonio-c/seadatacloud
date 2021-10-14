@@ -149,7 +149,7 @@ class TestApp(SeadataTests):
         assert content["files"][file_name]["path"] == "/tempZone/batches"
         assert content["files"][file_name]["owner"] == Env.get("IRODS_USER", "")
         assert content["files"][file_name]["object_type"] == "dataobject"
-        assert content["files"][file_name]["content_length"] == file_size
+        assert content["files"][file_name]["content_length"] == int(file_size)
 
         # DELETE BATCH
         parameters = {"batches": [batch_id], "backdoor": True}
