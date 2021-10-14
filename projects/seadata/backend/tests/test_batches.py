@@ -120,8 +120,7 @@ class TestApp(SeadataTests):
         assert content["status"] == "not_filled"
         assert content["files"] == []
 
-        # 5 not always is enough, sometimes it is found as partially_enabled
-        time.sleep(10)
+        time.sleep(6)
 
         # GET - valid batch - enabled
         r = client.get(f"{API_URI}/ingestion/{batch_id}", headers=headers)

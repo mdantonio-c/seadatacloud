@@ -263,7 +263,7 @@ def download_batch(
                 zip_ref.close()
 
             # 6 - verify num files?
-            local_file_count = len(local_unzipdir.iterdir())
+            local_file_count = len(list(local_unzipdir.iterdir()))
 
             log.info("Unzipped {} files from {}", local_file_count, batch_file)
 
@@ -292,7 +292,7 @@ def download_batch(
             to the irods_path (usually /myzone/batches/<batch_id>)
             """
 
-            irods_batch_file = batch_path.joinpath(file_name)
+            irods_batch_file = Path(batch_path, file_name)
             log.debug("Copying {} into {}...", batch_file, irods_batch_file)
 
             try:
