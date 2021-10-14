@@ -33,7 +33,7 @@ class TestApp(SeadataTests):
             f"{API_URI}/ingestion/my_batch_id/approve", headers=headers, data=data
         )
         assert r.status_code == 400
-        assert self.get_seadata_response(r) == "parameters is empty"
+        assert self.get_seadata_response(r) == "pids parameter is empty list"
 
         data["parameters"] = json.dumps({"pids": []})
         r = client.post(

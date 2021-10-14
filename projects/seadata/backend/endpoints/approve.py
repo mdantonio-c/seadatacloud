@@ -32,7 +32,7 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
     def post(self, batch_id: str, user: User, **json_input: Any) -> Response:
 
         params = json_input.get("parameters", {})
-        if not params:
+        if not params:  # pragma: no cover
             raise BadRequest("parameters is empty")
 
         files = params.get("pids", [])
