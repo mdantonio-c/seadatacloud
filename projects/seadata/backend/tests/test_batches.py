@@ -79,7 +79,6 @@ class TestApp(SeadataTests):
         assert r.status_code == 200
 
         # POST - send a valid batch
-
         batch_id = faker.pystr()
         download_path = "https://github.com/rapydo/http-api/archive/"
         file_name = "v0.6.6.zip"
@@ -102,8 +101,6 @@ class TestApp(SeadataTests):
         )
 
         r = client.post(f"{API_URI}/ingestion/{batch_id}", headers=headers, data=data)
-        # The request is accepted because no input validation is implemented.
-        # The errors will be raised by celery
         assert r.status_code == 200
 
         # GET - valid batch - not_filled yet

@@ -28,54 +28,69 @@ class TestApp(SeadataTests):
         # Default irods user is not an admin and not allowed to send restricted orders
         assert r.status_code == 401
 
-        # r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
-        # assert r.status_code == 400
-        # response = self.get_content(r)
+        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
+        assert r.status_code == 400
+        response = self.get_content(r)
 
-        # assert isinstance(response, dict)
-        # self.check_endpoints_input_schema(response)
+        assert isinstance(response, dict)
+        self.check_endpoints_input_schema(response)
 
-        # order_id = faker.pystr()
-        # download_path = "https://github.com/rapydo/http-api/archive/"
-        # file_name = "v0.6.6.zip"
-        # file_checksum = "a2b241be6ff941a7c613d2373e10d316"
-        # file_size = "1473570"
-        # data_file_count = "1"
-        # zipname = f"order_{order_id}_restricted"
-        # params = {
-        #     "request_id": order_id, "edmo_code": 634, "datetime": now,
-        #     "version": "1", "api_function": "download_restricted_order",
-        #     "test_mode": "true", "parameters": {
-        #         "order_number": order_id,
-        #         "backdoor": True,
-        #         "zipfile_name": zipname,
+        # POST - send a valid order
+        order_id = faker.pystr()
+        download_path = "https://github.com/rapydo/http-api/archive/"
+        file_name = "v0.6.6.zip"
+        file_checksum = "a2b241be6ff941a7c613d2373e10d316"
+        file_size = "1473570"
+        data_file_count = "1"
+        zipname = f"order_{order_id}_restricted"
+        parameters = {
+            "backdoor": True,
+            "order_number": order_id,
+            "zipfile_name": zipname,
+            "file_checksum": file_checksum,
+            "file_size": file_size,
+            "data_file_count": data_file_count,
+            "download_path": download_path,
+            "file_name": file_name,
+        }
+        data = self.get_input_data(
+            request_id=order_id,
+            api_function="download_restricted_order",
+            parameters=parameters,
+        )
 
-        #         "file_checksum": file_checksum,
-        #         "file_size": file_size,
-        #         "data_file_count": data_file_count,
-        #         "download_path": download_path,
-        #         "file_name": file_name
-        #     }
-        # }
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        assert r.status_code == 200
 
-        # apiclient.call(
-        #     URI, method='post', endpoint='/api/restricted/%s' % order_id,
-        #     token=token, payload=params
-        # )
+        # Sending a second restricted order request to verify the merge
+        file_name2 = "v0.7.1.zip"
+        file_checksum2 = "18c6a99f717bfb9e1416e74f83ac5878"
+        file_size2 = "178231"
+        data_file_count2 = "1"
 
-        # print_section("Sending a second restricted order request...")
-        # params = {
-        #     "request_id": order_id, "edmo_code": 634, "datetime": now,
-        #     "version": "1", "api_function": "download_restricted_order",
-        #     "test_mode": "true", "parameters": {
-        #         "order_number": order_id,
-        #         "backdoor": True,
-        #         "zipfile_name": zipname,
+        parameters = {
+            "backdoor": True,
+            "order_number": order_id,
+            "zipfile_name": zipname,
+            "file_checksum": file_checksum2,
+            "file_size": file_size2,
+            "data_file_count": data_file_count2,
+            "download_path": download_path,
+            "file_name": file_name2,
+        }
+        data = self.get_input_data(
+            request_id=order_id,
+            api_function="download_restricted_order",
+            parameters=parameters,
+        )
 
-        #         "file_checksum": file_checksum2,
-        #         "file_size": file_size2,
-        #         "data_file_count": data_file_count2,
-        #         "download_path": download_path,
-        #         "file_name": file_name2
-        #     }
-        # }
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        assert r.status_code == 200
+
+        r = client.get(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        assert r.status_code == 200
+
+        content = self.get_seadata_response(r)
+
+        assert isinstance(content, dict)
+        assert "letmefail" in content
