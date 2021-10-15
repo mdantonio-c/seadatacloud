@@ -164,12 +164,15 @@ class TestApp(SeadataTests):
         r = client.get(f"{API_URI}/ingestion/{batch_id}", headers=headers)
         assert r.status_code == 404
 
-    def test_tasks(self, app: Flask, faker: Faker):
+    def test_tasks(self, app: Flask, faker: Faker) -> None:
 
+        pass
         # TO BE IMPLEMENTED
-        batch_path = ""
-        local_path = ""
-        myjson = {}
-        response = self.send_task(app, "download_batch", batch_path, local_path, myjson)
+        # batch_path = ""
+        # local_path = ""
+        # myjson = {}
+        # response = self.send_task(
+        #     app, "download_batch", batch_path, local_path, myjson
+        # )
 
-        assert response == "Failed"
+        # assert response == "Failed"
