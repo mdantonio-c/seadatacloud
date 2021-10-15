@@ -26,16 +26,18 @@ class TestApp(SeadataTests):
 
         order_id = faker.pystr()
         # POST - send an empty request
-        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers)
+        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
         assert r.status_code == 400
         response = self.get_content(r)
 
-        # POST - send an invalid request
+        # POST - send an invalid request (no files to be downloaded)
         data = self.get_input_data(
             request_id=order_id, api_function="download_restricted_order"
         )
-        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
-        assert r.status_code == 400
+        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers, data=data)
+        # The request is accepted because no input validation is implemented.
+        # The errors will be raised by celery
+        assert r.status_code == 200
         response = self.get_content(r)
 
         assert isinstance(response, dict)
