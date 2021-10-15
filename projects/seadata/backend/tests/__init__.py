@@ -13,7 +13,7 @@ IRODS_PASSWORD = Env.get("IRODS_PASSWORD", "")
 class SeadataTests(BaseTests):
     def get_seadata_response(
         self, http_out: Response
-    ) -> Union[List[Any], Dict[str, Any]]:
+    ) -> Union[str, List[Any], Dict[str, Any]]:
 
         response = self.get_content(http_out)
         assert isinstance(response, dict)
@@ -34,6 +34,7 @@ class SeadataTests(BaseTests):
 
         assert r.status_code == 200
         data = self.get_seadata_response(r)
+        assert isinstance(data, dict)
         assert "token" in data
 
         token = data["token"]

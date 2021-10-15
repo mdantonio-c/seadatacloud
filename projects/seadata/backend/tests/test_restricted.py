@@ -1,6 +1,7 @@
 import time
 
 from faker import Faker
+from restapi.env import Env
 from restapi.tests import API_URI, FlaskClient
 from tests.custom import SeadataTests
 
@@ -100,7 +101,7 @@ class TestApp(SeadataTests):
         # The celery task should still be running...
         assert len(content) == 0
 
-        time.sleep(10)
+        time.sleep(20)
 
         r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, data=data)
         assert r.status_code == 200
@@ -111,4 +112,19 @@ class TestApp(SeadataTests):
         # The celery task should still be running...
         # two files downloaded, but they are merged in a single zip
         assert len(content) == 1
-        assert "letmefail" in content[0]
+        assert "name" in content[0]
+        assert "path" in content[0]
+        assert "object_type" in content[0]
+        assert "owner" in content[0]
+        assert "content_length" in content[0]
+        assert "created" in content[0]
+        assert "last_modified" in content[0]
+        assert "URL" in content[0]
+        assert content[0]["name"] == file_name
+        assert content[0]["path"] == f"/tempZone/orders/{order_id}"
+        assert content[0]["owner"] == Env.get("IRODS_USER", "")
+        assert content[0]["object_type"] == "dataobject"
+        # 1473570?
+        assert content[0]["content_length"] == int(file_size)
+        # should be updated in case of download request
+        assert content[0]["URL"] is None
