@@ -1,3 +1,5 @@
+import time
+
 from faker import Faker
 from restapi.tests import API_URI, FlaskClient
 from tests.custom import SeadataTests
@@ -28,7 +30,6 @@ class TestApp(SeadataTests):
         # POST - send an empty request
         r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
         assert r.status_code == 400
-        response = self.get_content(r)
 
         # POST - send an invalid request (no files to be downloaded)
         data = self.get_input_data(
@@ -96,5 +97,18 @@ class TestApp(SeadataTests):
         content = self.get_seadata_response(r)
 
         assert isinstance(content, list)
-        assert len(content) == 2
+        # The celery task should still be running...
+        assert len(content) == 0
+
+        time.sleep(10)
+
+        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, data=data)
+        assert r.status_code == 200
+
+        content = self.get_seadata_response(r)
+
+        assert isinstance(content, list)
+        # The celery task should still be running...
+        # two files downloaded, but they are merged in a single zip
+        assert len(content) == 1
         assert "letmefail" in content[0]
