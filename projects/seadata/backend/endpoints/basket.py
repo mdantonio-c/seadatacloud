@@ -158,7 +158,7 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
             msg = prepare_message(self, json=json, log_string="end", status="sent")
             log_into_queue(self, msg)
             return icom.stream_ticket(zip_ipath, headers=headers)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
 
@@ -225,7 +225,7 @@ class BasketEndpoint(SeaDataEndpoint):
             msg = prepare_message(self, log_string="end", status="completed")
             log_into_queue(self, msg)
             return self.response(response)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     @decorators.auth.require()
@@ -304,7 +304,7 @@ class BasketEndpoint(SeaDataEndpoint):
                 return self.return_async_id(task.id)
 
             return self.response({"status": "enabled"})
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
     def no_slash_ticket(self, imain: irods.IrodsPythonExt, path: str) -> str:
@@ -481,7 +481,7 @@ class BasketEndpoint(SeaDataEndpoint):
             log_into_queue(self, msg)
 
             return self.response(response)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
         except NetworkException as e:  # pragma: no cover
             log.error(e)
@@ -509,5 +509,5 @@ class BasketEndpoint(SeaDataEndpoint):
             )
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")

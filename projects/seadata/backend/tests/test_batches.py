@@ -1,6 +1,7 @@
 import time
 
 from faker import Faker
+from flask import Flask
 from restapi.env import Env
 from restapi.tests import API_URI, FlaskClient
 from tests.custom import SeadataTests
@@ -162,3 +163,13 @@ class TestApp(SeadataTests):
         # Verify batch is deleted
         r = client.get(f"{API_URI}/ingestion/{batch_id}", headers=headers)
         assert r.status_code == 404
+
+    def test_tasks(self, app: Flask, faker: Faker):
+
+        # TO BE IMPLEMENTED
+        batch_path = ""
+        local_path = ""
+        myjson = {}
+        response = self.send_task(app, "download_batch", batch_path, local_path, myjson)
+
+        assert response == "Failed"

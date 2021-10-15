@@ -42,5 +42,5 @@ class ListResources(SeaDataEndpoint):
             )
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")

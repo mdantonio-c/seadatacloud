@@ -94,7 +94,7 @@ class IngestionEndpoint(SeaDataEndpoint, Uploader):
 
             data["files"] = batch_files
             return self.response(data)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
         except NetworkException as e:  # pragma: no cover
             log.error(e)

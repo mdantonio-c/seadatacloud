@@ -123,7 +123,7 @@ class Resources(SeaDataEndpoint):
                     # Bad Resource
                     status_code=410,
                 )
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout:  # pragma: no cover
             raise ServiceUnavailable("B2SAFE is temporarily unavailable")
 
         ###################
