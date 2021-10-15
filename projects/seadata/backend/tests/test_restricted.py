@@ -24,17 +24,24 @@ class TestApp(SeadataTests):
 
         headers = self.login(client)
 
-        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
-        # The request is accepted because no input validation is implemented.
-        # The errors will be raised by celery
-        assert r.status_code == 200
+        order_id = faker.pystr()
+        # POST - send an empty request
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers)
+        assert r.status_code == 400
+        response = self.get_content(r)
+
+        # POST - send an invalid request
+        data = self.get_input_data(
+            request_id=order_id, api_function="download_restricted_order"
+        )
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        assert r.status_code == 400
         response = self.get_content(r)
 
         assert isinstance(response, dict)
         self.check_endpoints_input_schema(response)
 
         # POST - send a valid order
-        order_id = faker.pystr()
         download_path = "https://github.com/rapydo/http-api/archive/"
         file_name = "v0.6.6.zip"
         file_checksum = "a2b241be6ff941a7c613d2373e10d316"

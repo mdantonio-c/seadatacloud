@@ -12,9 +12,9 @@ class Credentials(Schema):
     username = fields.Str(required=True)
     password = fields.Str(
         required=True,
-        password=True,
+        metadata={"password": True},
     )
-    authscheme = fields.Str(default="credentials")
+    authscheme = fields.Str(dump_default="credentials")
 
 
 class B2safeProxy(SeaDataEndpoint):
