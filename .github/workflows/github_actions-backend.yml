@@ -27,10 +27,11 @@ jobs:
         run: |
 
           IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
+          IRODS_USER=$(grep IRODS_USER .env)
 
           # Please note the comma after SEADATA_PRIVILEGED_USERS,
           # it a added to test the initialization fn resilience in case of errors
-          rapydo --testing -e SEADATA_EDMO_CODE=1234 -e SEADATA_PRIVILEGED_USERS=irods_test_user, -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
+          rapydo --testing -e SEADATA_EDMO_CODE=1234 -e SEADATA_PRIVILEGED_USERS=${IRODS_USER}, -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_INGESTION}
           sudo mkdir -p /nfs/share/batches
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_ORDERS}
