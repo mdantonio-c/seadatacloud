@@ -25,11 +25,9 @@ class TestApp(SeadataTests):
         headers = self.login(client)
 
         r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
-        # Default irods user is not an admin and not allowed to send restricted orders
-        assert r.status_code == 401
-
-        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers)
-        assert r.status_code == 400
+        # The request is accepted because no input validation is implemented.
+        # The errors will be raised by celery
+        assert r.status_code == 200
         response = self.get_content(r)
 
         assert isinstance(response, dict)
