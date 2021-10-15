@@ -27,7 +27,7 @@ jobs:
         run: |
 
           IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
-          IRODS_USER=$(grep IRODS_USER .env)
+          IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
 
           # Please note the comma after SEADATA_PRIVILEGED_USERS,
           # it a added to test the initialization fn resilience in case of errors
