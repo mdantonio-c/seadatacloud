@@ -90,7 +90,7 @@ class TestApp(SeadataTests):
         r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
         assert r.status_code == 200
 
-        r = client.get(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, data=data)
         assert r.status_code == 200
 
         content = self.get_seadata_response(r)
