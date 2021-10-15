@@ -120,7 +120,7 @@ class TestApp(SeadataTests):
         assert "created" in content[0]
         assert "last_modified" in content[0]
         assert "URL" in content[0]
-        assert content[0]["name"] == file_name
+        assert content[0]["name"] == f"order_{order_id}_restricted.zip"
         assert content[0]["path"] == f"/tempZone/orders/{order_id}"
         assert content[0]["owner"] == Env.get("IRODS_USER", "")
         assert content[0]["object_type"] == "dataobject"
