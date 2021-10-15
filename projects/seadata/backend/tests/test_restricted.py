@@ -38,10 +38,6 @@ class TestApp(SeadataTests):
         # The request is accepted because no input validation is implemented.
         # The errors will be raised by celery
         assert r.status_code == 200
-        response = self.get_content(r)
-
-        assert isinstance(response, dict)
-        self.check_endpoints_input_schema(response)
 
         # POST - send a valid order
         download_path = "https://github.com/rapydo/http-api/archive/"
