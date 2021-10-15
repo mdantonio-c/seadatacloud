@@ -95,5 +95,6 @@ class TestApp(SeadataTests):
 
         content = self.get_seadata_response(r)
 
-        assert isinstance(content, dict)
-        assert "letmefail" in content
+        assert isinstance(content, list)
+        assert len(content) == 2
+        assert "letmefail" in content[0]
