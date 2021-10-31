@@ -63,7 +63,7 @@ jobs:
         run: |
           rapydo remove --all
           IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
-          rapydo --prod -e SEADATA_EDMO_CODE=1234 -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
+          rapydo --testing --prod -e SEADATA_EDMO_CODE=1234 -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           rapydo pull --quiet
           rapydo ssl --volatile
           rapydo start
