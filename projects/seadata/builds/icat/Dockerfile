@@ -26,7 +26,7 @@ RUN apt-get update -qq && \
         wget git vim expect lsof sudo \
         apt-transport-https libxml2 \
         globus-proxy-utils globus-gsi-cert-utils-progs globus-simple-ca \
-    && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
+    && wget --no-check-certificate https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
     && dpkg -i *.deb \
     && apt-get autoremove --yes \
     && apt-get clean \
