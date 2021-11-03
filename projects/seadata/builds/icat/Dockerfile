@@ -21,18 +21,16 @@ WORKDIR /tmp
 # GSI and Grid FTP dependencies + # update to globus toolkit 6
 
 # globus toolkit 6.0.15 (current latest) fails to install, forcing 6.0.14
-RUN apt-get update -qq && apt-get install -y \
+RUN apt-get update -qq && \
+    apt-get install --yes --no-install-recommends \
         wget git vim expect lsof sudo \
-        apt-transport-https \
-        libxml2 \
-    # && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_latest_all.deb \
+        apt-transport-https libxml2 \
+        globus-proxy-utils globus-gsi-cert-utils-progs globus-simple-ca \
     && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
     && dpkg -i *.deb \
-    && apt-get update -qq && apt-get install -y \
-        globus-proxy-utils \
-        globus-gsi-cert-utils-progs globus-simple-ca \
-    && apt-get clean autoclean && apt-get autoremove -y && \
-    rm -rf /var/lib/cache /var/lib/log /tmp/*
+    && apt-get autoremove --yes && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ###################
 # Add repos, download and install
@@ -118,9 +116,6 @@ RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-init_1.
 
 ###################
 EXPOSE 1247
-
-# ENTRYPOINT ["docker-entrypoint"]
-# CMD ["irods"]
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["docker-entrypoint", "irods"]

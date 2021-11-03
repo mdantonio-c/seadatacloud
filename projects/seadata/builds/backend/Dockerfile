@@ -1,5 +1,4 @@
 FROM rapydo/backend:2.1
-MAINTAINER "Mattia D'Antonio <m.dantonio@cineca.it>"
 
 ARG RAPYDO_VERSION
 RUN test -n "$RAPYDO_VERSION"
