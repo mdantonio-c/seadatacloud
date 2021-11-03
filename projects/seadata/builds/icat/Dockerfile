@@ -67,8 +67,10 @@ RUN apt-get update && apt-get install -y \
         irods-server=$IRODS_VERSION \
         irods-database-plugin-postgres=$IRODS_VERSION \
         irods-auth-plugin-gsi=$GSI_VERSION \
-    && apt-get clean autoclean && apt-get autoremove -y && \
-    rm -rf /var/lib/cache /var/lib/log /tmp/*
+    && apt-get clean autoclean \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/cache /var/lib/log /tmp/*
 
 # Note: USER and GROUP may be added automatically by irods install scripts
 
