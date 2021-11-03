@@ -18,7 +18,7 @@ RUN test -n "$CURRENT_GID"
 # Preparation
 WORKDIR /tmp
 
-# GSI and Grid FTP dependencies + # update to globus toolkit 6
+# GSI and Grid FTP dependencies + update to globus toolkit 6
 
 # globus toolkit 6.0.15 (current latest) fails to install, forcing 6.0.14
 RUN apt-get update -qq && \
@@ -28,9 +28,9 @@ RUN apt-get update -qq && \
         globus-proxy-utils globus-gsi-cert-utils-progs globus-simple-ca \
     && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
     && dpkg -i *.deb \
-    && apt-get autoremove --yes && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    && apt-get autoremove --yes \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ###################
 # Add repos, download and install
@@ -62,14 +62,14 @@ ENV GSI_VERSION 2.1.0
 # ENV IRODS_VERSION 4.2.2
 # ENV GSI_VERSION 2.2.0
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install --yes --no-install-recommends \
         irods-runtime=$IRODS_VERSION irods-icommands=$IRODS_VERSION \
         irods-server=$IRODS_VERSION \
         irods-database-plugin-postgres=$IRODS_VERSION \
         irods-auth-plugin-gsi=$GSI_VERSION \
-    && apt-get clean autoclean \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/* \
+    && apt-get autoremove --yes \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
     && rm -rf /var/lib/cache /var/lib/log /tmp/*
 
 # Note: USER and GROUP may be added automatically by irods install scripts
@@ -104,7 +104,6 @@ VOLUME /opt/certificates
 ENV TERM xterm-256color
 
 ###################
-# ENTRYPOINT
 # if you need to add future commands after irods installation:
 # allow custom scripts to be executed at launch time
 # RUN mkdir /docker-entrypoint.d/
