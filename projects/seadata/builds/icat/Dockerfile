@@ -18,25 +18,23 @@ RUN test -n "$CURRENT_GID"
 # Preparation
 WORKDIR /tmp
 
-# GSI and Grid FTP dependencies + update to globus toolkit 6
+RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | apt-key add - \
+    && echo "deb [arch=amd64] https://packages.irods.org/apt/ trusty main" | tee /etc/apt/sources.list.d/renci-irods.list
 
+# GSI and Grid FTP dependencies + update to globus toolkit 6
 # globus toolkit 6.0.15 (current latest) fails to install, forcing 6.0.14
 RUN apt-get update -qq && \
     apt-get install --yes --no-install-recommends \
         wget git vim expect lsof sudo \
         apt-transport-https libxml2 \
         globus-proxy-utils globus-gsi-cert-utils-progs globus-simple-ca \
-    && wget --no-check-certificate https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
+    && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
     && dpkg -i *.deb \
     && apt-get autoremove --yes \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 ###################
-# Add repos, download and install
-ENV URL https://packages.irods.org
-RUN wget -qO - $URL/irods-signing-key.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.irods.org/apt/ trusty main" | tee /etc/apt/sources.list.d/renci-irods.list
 
 # Make sure the main irods user is the same id into HTTP API server
 ENV IRODS_UNAME irods
@@ -62,7 +60,7 @@ ENV GSI_VERSION 2.1.0
 # ENV IRODS_VERSION 4.2.2
 # ENV GSI_VERSION 2.2.0
 
-RUN apt-get update && apt-get install --yes --no-install-recommends \
+RUN apt-get update -qq && apt-get install --yes --no-install-recommends \
         irods-runtime=$IRODS_VERSION irods-icommands=$IRODS_VERSION \
         irods-server=$IRODS_VERSION \
         irods-database-plugin-postgres=$IRODS_VERSION \
