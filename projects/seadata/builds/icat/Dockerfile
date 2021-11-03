@@ -18,7 +18,7 @@ RUN test -n "$CURRENT_GID"
 # Preparation
 WORKDIR /tmp
 
-RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | apt-key add - \
+RUN curl -L https://packages.irods.org/irods-signing-key.asc | apt-key add - \
     && echo "deb [arch=amd64] https://packages.irods.org/apt/ trusty main" | tee /etc/apt/sources.list.d/renci-irods.list
 
 # GSI and Grid FTP dependencies + update to globus toolkit 6
