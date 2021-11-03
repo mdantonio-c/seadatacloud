@@ -1,15 +1,11 @@
-###################
 FROM ubuntu:16.04
-LABEL maintainer="Paolo D'Onorio De Meo <m.dantonio@cineca.it>"
+LABEL maintainer="Paolo D'Onorio De Meo"
 
 ARG CURRENT_UID
 RUN test -n "$CURRENT_UID"
 
 ARG CURRENT_GID
 RUN test -n "$CURRENT_GID"
-##############
-
-### HOW TO ###
 
 ## CREATE A USER
 # iadmin mkuser paolo rodsuser
@@ -18,27 +14,28 @@ RUN test -n "$CURRENT_GID"
 # Preparation
 WORKDIR /tmp
 
-RUN curl -L https://packages.irods.org/irods-signing-key.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.irods.org/apt/ trusty main" | tee /etc/apt/sources.list.d/renci-irods.list
+# GSI and Grid FTP dependencies + # update to globus toolkit 6
 
-# GSI and Grid FTP dependencies + update to globus toolkit 6
 # globus toolkit 6.0.15 (current latest) fails to install, forcing 6.0.14
-RUN apt-get update -qq && \
-    apt-get install --yes --no-install-recommends \
+RUN apt-get update -qq && apt-get install --yes --no-install-recommends \
         wget git vim expect lsof sudo \
-        apt-transport-https libxml2 \
-        globus-proxy-utils globus-gsi-cert-utils-progs globus-simple-ca \
+        apt-transport-https \
+        libxml2 \
     && wget https://downloads.globus.org/toolkit/gt6/stable/installers/repo/deb/globus-toolkit-repo_6.0.14_all.deb \
     && dpkg -i *.deb \
-    && apt-get autoremove --yes \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get update -qq && apt-get install --yes --no-install-recommends \
+        globus-proxy-utils \
+        globus-gsi-cert-utils-progs globus-simple-ca \
+
+    && apt-get autoremove --yes && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /var/lib/cache /var/lib/log /tmp/*
 
 ###################
+# Add repos, download and install
+RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | apt-key add - \
+    && echo "deb [arch=amd64] https://packages.irods.org/apt/ trusty main" | tee /etc/apt/sources.list.d/renci-irods.list
 
 # Make sure the main irods user is the same id into HTTP API server
 ENV IRODS_UNAME irods
-# FIXME: not possible at the moment to change this name from configuration
 ENV IRODS_UID $CURRENT_UID
 RUN useradd \
     -r -M -d /home/$IRODS_UNAME -s /bin/bash -p ! \
@@ -50,25 +47,16 @@ RUN useradd \
 ###################
 # GSI and certificates
 
-# ENV IRODS_VERSION 4.2.0
-# ENV GSI_VERSION 2.0.0
-
 ENV IRODS_VERSION 4.2.1
 ENV GSI_VERSION 2.1.0
-
-# BUGGED against b2safe!
-# ENV IRODS_VERSION 4.2.2
-# ENV GSI_VERSION 2.2.0
 
 RUN apt-get update -qq && apt-get install --yes --no-install-recommends \
         irods-runtime=$IRODS_VERSION irods-icommands=$IRODS_VERSION \
         irods-server=$IRODS_VERSION \
         irods-database-plugin-postgres=$IRODS_VERSION \
         irods-auth-plugin-gsi=$GSI_VERSION \
-    && apt-get autoremove --yes \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/lib/cache /var/lib/log /tmp/*
+
+    && apt-get autoremove --yes && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /var/lib/cache /var/lib/log /tmp/*
 
 # Note: USER and GROUP may be added automatically by irods install scripts
 
@@ -102,6 +90,7 @@ VOLUME /opt/certificates
 ENV TERM xterm-256color
 
 ###################
+# ENTRYPOINT
 # if you need to add future commands after irods installation:
 # allow custom scripts to be executed at launch time
 # RUN mkdir /docker-entrypoint.d/
@@ -115,6 +104,9 @@ RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-init_1.
 
 ###################
 EXPOSE 1247
+
+# ENTRYPOINT ["docker-entrypoint"]
+# CMD ["irods"]
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["docker-entrypoint", "irods"]
