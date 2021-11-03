@@ -69,7 +69,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
         irods-auth-plugin-gsi=$GSI_VERSION \
     && apt-get autoremove --yes \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/lib/cache /var/lib/log /tmp/*
 
 # Note: USER and GROUP may be added automatically by irods install scripts
