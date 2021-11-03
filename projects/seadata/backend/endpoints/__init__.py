@@ -446,7 +446,7 @@ class ImportManagerAPI:
             log.error("Invalid external APIs URI")
             return False
 
-        r = requests.post(self._uri, json=payload)
+        r = requests.post(self._uri, json=payload, timeout=30)
         log.info("POST external IM API, status={}, uri={}", r.status_code, self._uri)
 
         if r.status_code != 200:

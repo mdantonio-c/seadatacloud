@@ -221,7 +221,7 @@ class Rancher:
         try:
             import requests
 
-            r = requests.get(catalog_url, auth=self._hub_credentials)
+            r = requests.get(catalog_url, auth=self._hub_credentials, timeout=30)
             catalog = r.json()
             # print("TEST", catalog)
         except BaseException:

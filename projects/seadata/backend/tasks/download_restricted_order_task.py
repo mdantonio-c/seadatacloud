@@ -171,6 +171,7 @@ def download_restricted_order(
                     stream=True,
                     verify=False,
                     headers=DOWNLOAD_HEADERS,
+                    timeout=120,
                 )
             except requests.exceptions.ConnectionError:
                 return notify_error(

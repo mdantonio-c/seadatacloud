@@ -149,6 +149,7 @@ def download_batch(
                     stream=True,
                     verify=False,
                     headers=DOWNLOAD_HEADERS,
+                    timeout=120,
                 )
             except requests.exceptions.ConnectionError:
                 return notify_error(
