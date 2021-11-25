@@ -87,7 +87,9 @@ class Resources(SeaDataEndpoint):
         path="/ingestion/<batch_id>/qc/<qc_name>",
         summary="Launch a quality check as a docker container",
     )
-    def put(self, batch_id: str, qc_name: str, **input_json: Any) -> Response:
+    def put(
+        self, batch_id: str, qc_name: str, user: User, **input_json: Any
+    ) -> Response:
         """Launch a quality check inside a container"""
 
         ###########################
