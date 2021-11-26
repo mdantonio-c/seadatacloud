@@ -533,7 +533,7 @@ class IrodsPythonExt(Connector):
                 raise AttributeError(f"No output from {name} rule")
 
             # it's binary data (BinBytesBuf) so must be decoded
-            output = out_buf.decode("utf-8")
+            output = cast(str, out_buf.decode("utf-8"))
             output = re.sub(r"\s+", "", output)
             output = re.sub(r"\\x00", "", output)
             output = output.rstrip("\x00")
