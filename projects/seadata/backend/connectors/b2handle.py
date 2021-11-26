@@ -42,7 +42,7 @@ class PIDgenerator:
 
     eudat_internal_fields = ["EUDAT/FIXED_CONTENT", "PID"]
 
-    def pid_name_fix(self, irule_output: Any) -> str:
+    def pid_name_fix(self, irule_output: str) -> str:
         pieces = irule_output.split(self.pid_separator)
         pid = self.pid_separator.join([pieces[0], pieces[1].lower()])
         log.debug("Parsed PID: {}", pid)
@@ -68,7 +68,7 @@ class PIDgenerator:
             outvar,
         )
 
-        rule_output = icom.rule("get_pid", body, inputs, output=True)
+        rule_output = icom.rule("get_pid", body, inputs)
         return self.pid_name_fix(rule_output)
 
     def parse_pid_dataobject_path(

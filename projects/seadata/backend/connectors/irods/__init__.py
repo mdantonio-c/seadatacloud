@@ -3,6 +3,8 @@ iRODS file-system flask connector
 """
 import logging
 import os
+import re
+import textwrap
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Union, cast
 
@@ -491,11 +493,7 @@ class IrodsPythonExt(Connector):
         except iexceptions.DataObjectDoesNotExist:
             raise IrodsException("Cannot set metadata, object not found")
 
-    def rule(
-        self, name: str, body: str, inputs: Dict[str, str], output: bool = False
-    ) -> Any:
-
-        import textwrap
+    def rule(self, name: str, body: str, inputs: Dict[str, str]) -> str:
 
         # A bit complex to use {}.format syntax...
         rule_body = textwrap.dedent(
@@ -506,10 +504,7 @@ class IrodsPythonExt(Connector):
             % (name, body)
         )
 
-        outname = None
-        if output:
-            outname = "ruleExecOut"
-        myrule = Rule(self.prc, body=rule_body, params=inputs, output=outname)
+        myrule = Rule(self.prc, body=rule_body, params=inputs, output="ruleExecOut")
         try:
             raw_out = myrule.execute()
         except BaseException as e:
@@ -520,33 +515,31 @@ class IrodsPythonExt(Connector):
         else:
             log.debug("Rule {} executed: {}", name, raw_out)
 
+            if not raw_out.MsParam_PI:
+                log.error("Rule failed, MsParam_PI is empty")
+                raise AttributeError(f"No output from {name} rule")
             # retrieve out buffer
-            if output and len(raw_out.MsParam_PI) > 0:
-                out_array = raw_out.MsParam_PI[0].inOutStruct
-                # print("out array", out_array)
+            out_array = raw_out.MsParam_PI[0].inOutStruct
 
-                import re
+            err_buf = out_array.stderrBuf.buf
+            if err_buf is not None:
+                err_buf = err_buf.decode("utf-8")
+                err_buf = re.sub(r"\s+", "", err_buf)
+                log.debug("Err buff: {}", err_buf)
 
-                file_coding = "utf-8"
+            out_buf = out_array.stdoutBuf.buf
+            if not out_buf:
+                log.error("Rule failed, stdoutBuf is empty")
+                raise AttributeError(f"No output from {name} rule")
 
-                buf = out_array.stdoutBuf.buf
-                if buf is not None:
-                    # it's binary data (BinBytesBuf) so must be decoded
-                    buf = buf.decode(file_coding)
-                    buf = re.sub(r"\s+", "", buf)
-                    buf = re.sub(r"\\x00", "", buf)
-                    buf = buf.rstrip("\x00")
-                    log.debug("Out buff: {}", buf)
+            # it's binary data (BinBytesBuf) so must be decoded
+            output = out_buf.decode("utf-8")
+            output = re.sub(r"\s+", "", output)
+            output = re.sub(r"\\x00", "", output)
+            output = output.rstrip("\x00")
+            log.debug("Out buff: {}", output)
 
-                err_buf = out_array.stderrBuf.buf
-                if err_buf is not None:
-                    err_buf = err_buf.decode(file_coding)
-                    err_buf = re.sub(r"\s+", "", err_buf)
-                    log.debug("Err buff: {}", err_buf)
-
-                return buf
-
-            return raw_out
+            return output
 
         #  EXAMPLE FOR IRULE: METADATA RULE
         # object_path = "/sdcCineca/home/httpadmin/tmp.txt"
