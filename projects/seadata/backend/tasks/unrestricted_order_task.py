@@ -208,9 +208,10 @@ def unrestricted_order(
                 zip_local_file = local_dir.joinpath(zip_file_name)
                 log.debug("Zip local path: {}", zip_local_file)
                 if not zip_local_file.exists() or zip_local_file.stat().st_size == 0:
-                    base_zip_file_name, _ = os.path.splitext(zip_file_name)
                     make_archive(
-                        base_name=base_zip_file_name,
+                        base_name=str(
+                            zip_local_file.parent.joinpath(zip_local_file.stem)
+                        ),
                         format="zip",
                         root_dir=local_zip_dir,
                     )
