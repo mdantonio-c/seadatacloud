@@ -124,7 +124,6 @@ class TestApp(SeadataTests):
         assert content[0]["path"] == f"/tempZone/orders/{order_id}"
         assert content[0]["owner"] == Env.get("IRODS_USER", "")
         assert content[0]["object_type"] == "dataobject"
-        # 1473570?
-        assert content[0]["content_length"] == int(file_size)
+        assert content[0]["content_length"] > int(file_size)
         # should be updated in case of download request
         assert content[0]["URL"] is None
