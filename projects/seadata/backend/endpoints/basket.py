@@ -209,7 +209,7 @@ class BasketEndpoint(SeaDataEndpoint):
                 if not name:  # pragma: no cover
                     continue
 
-                if name.endswith("_restricted.zip.bak"):
+                if name.endswith(".bak"):
                     continue
 
                 path = data.get("path")
