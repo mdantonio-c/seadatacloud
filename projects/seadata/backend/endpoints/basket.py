@@ -505,7 +505,7 @@ class BasketEndpoint(SeaDataEndpoint):
 
             c = celery.get_instance()
             task = c.celery_app.send_task(
-                "delete_orders", args=[order_path, local_order_path, json_input]
+                "delete_orders", args=[order_path, str(local_order_path), json_input]
             )
             log.info("Async job: {}", task.id)
             return self.return_async_id(task.id)
