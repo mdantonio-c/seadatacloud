@@ -357,7 +357,7 @@ class BasketEndpoint(SeaDataEndpoint):
 
         # too many work for THEM to skip the add of the protocol
         # they prefer to get back an incomplete url
-        host.replace("https://", "").replace("http://", "")
+        host = host.replace("https://", "").replace("http://", "")
 
         url = f"{host}/api/orders/{order_id}/download/{ftype}/c/{code}"
 
