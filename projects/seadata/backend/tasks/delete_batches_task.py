@@ -14,7 +14,7 @@ from seadata.tasks.seadata import ext_api, notify_error
 TIMEOUT = 180
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def delete_batches(
     self: Task, batches_path: str, local_batches_path: str, myjson: Dict[str, Any]
 ) -> str:

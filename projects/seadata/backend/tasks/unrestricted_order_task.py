@@ -25,7 +25,7 @@ b2handle_client = b2handle.instantiate_for_read_access()
 pmaker = PIDgenerator()
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def unrestricted_order(
     self: Task,
     order_id: str,

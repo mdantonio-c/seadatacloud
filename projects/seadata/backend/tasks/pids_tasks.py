@@ -25,7 +25,7 @@ def recursive_list_files(imain: irods.IrodsPythonExt, irods_path: str) -> List[s
     return data
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
 
     log.info("Task cache_batch_pids working on: {}", irods_path)
@@ -94,7 +94,7 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
     return stats
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def inspect_pids_cache(self: Task) -> None:
 
     log.info("Inspecting cache...")

@@ -5,8 +5,8 @@
 project:
   title: SeaDataCloud HTTP-API
   description: Processing data in SeaDataCloud project
-  version: "1.2.1"
-  rapydo: "2.1"
+  version: "1.2.2"
+  rapydo: "2.2"
 
 tags:
   seadatacloud: endpoints related to the SeaDataCloud project
@@ -21,7 +21,7 @@ tags:
 
 variables:
   env:
-    SEADATA_API_VERSION: 1.2.1.0001
+    SEADATA_API_VERSION: 1.2.2.0001
 
     LOG_LEVEL: INFO
     AUTH_SERVICE: sqlalchemy

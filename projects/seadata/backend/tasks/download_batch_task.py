@@ -26,7 +26,7 @@ DOWNLOAD_HEADERS = {
 }
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def download_batch(
     self: Task, batch_path: str, local_path: str, myjson: Dict[str, Any]
 ) -> str:

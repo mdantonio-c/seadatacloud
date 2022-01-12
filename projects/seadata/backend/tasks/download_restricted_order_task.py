@@ -61,7 +61,7 @@ def check_params(params: Dict[str, Any]) -> Optional[Tuple[str, str]]:
     return None
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def download_restricted_order(
     self: Task, order_id: str, order_path: str, myjson: Dict[str, Any]
 ) -> str:

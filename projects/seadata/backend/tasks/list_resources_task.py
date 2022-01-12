@@ -11,7 +11,7 @@ from seadata.tasks.seadata import ext_api, notify_error
 TIMEOUT = 180
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def list_resources(
     self: Task, batch_path: str, order_path: str, myjson: Dict[str, Any]
 ) -> str:

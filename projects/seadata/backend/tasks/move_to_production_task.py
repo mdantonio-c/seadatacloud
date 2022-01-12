@@ -20,7 +20,7 @@ pmaker = PIDgenerator()
 TIMEOUT = 180
 
 
-@CeleryExt.task()
+@CeleryExt.task(idempotent=False)
 def move_to_production_task(
     self: Task, batch_id: str, batch_path: str, cloud_path: str, myjson: Dict[str, Any]
 ) -> str:
