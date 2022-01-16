@@ -6,13 +6,8 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
-try:
-    from b2handle.clientcredentials import PIDClientCredentials as credentials
-    from b2handle.handleclient import EUDATHandleClient as b2handle
-except BaseException:
-    b2handle = None
-    credentials = None
-
+from b2handle.clientcredentials import PIDClientCredentials as credentials
+from b2handle.handleclient import EUDATHandleClient as b2handle
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 
@@ -140,8 +135,6 @@ class PIDgenerator:
         return handle_client, False
 
     def check_pid_content(self, pid: str) -> Any:
-        # from b2handle.handleclient import EUDATHandleClient as b2handle
-        # client = b2handle.instantiate_for_read_access()
         client, authenticated = self.connect_client(
             force_no_credentials=True, disable_logs=True
         )
