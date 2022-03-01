@@ -28,6 +28,7 @@ docker-compose.yml
 ###################################
 
 *.log
+*.bak
 
 # notebooks
 .ipynb_checkpoint
