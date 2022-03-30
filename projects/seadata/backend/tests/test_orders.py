@@ -59,14 +59,14 @@ class TestApp(SeadataTests):
 
         headers = self.login(client)
 
-        r = client.post(f"{API_URI}/orders", headers=headers)
+        r = client.post(f"{API_URI}/orders", headers=headers, json={})
         assert r.status_code == 400
         response = self.get_content(r)
 
         assert isinstance(response, dict)
         self.check_endpoints_input_schema(response)
 
-        r = client.delete(f"{API_URI}/orders", headers=headers)
+        r = client.delete(f"{API_URI}/orders", headers=headers, json={})
         assert r.status_code == 400
         response = self.get_content(r)
 
