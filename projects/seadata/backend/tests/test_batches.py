@@ -51,7 +51,7 @@ class TestApp(SeadataTests):
         assert isinstance(response, dict)
         self.check_endpoints_input_schema(response)
 
-        r = client.delete(f"{API_URI}/ingestion", headers=headers)
+        r = client.delete(f"{API_URI}/ingestion", headers=headers, json={})
         assert r.status_code == 400
         response = self.get_content(r)
 
