@@ -29,7 +29,7 @@ class SeadataTests(BaseTests):
 
         r = client.post(
             f"{AUTH_URI}/b2safeproxy",
-            data={"username": IRODS_USER, "password": IRODS_PASSWORD},
+            json={"username": IRODS_USER, "password": IRODS_PASSWORD},
         )
 
         assert r.status_code == 200
