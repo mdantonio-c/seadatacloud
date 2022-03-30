@@ -67,14 +67,14 @@ class TestApp(SeadataTests):
 
         # POST - with no files to be downloaded
         data = self.get_input_data()
-        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, data=data)
+        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, json=data)
         # The request is accepted because no input validation is implemented.
         # The errors will be raised by celery
         assert r.status_code == 200
 
         # Even if the previous batch request was empty, the batch has been created
         # But the batch can be executed again
-        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, data=data)
+        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, json=data)
         # The request is accepted because no input validation is implemented.
         # The errors will be raised by celery
         assert r.status_code == 200
@@ -101,7 +101,7 @@ class TestApp(SeadataTests):
             parameters=parameters,
         )
 
-        r = client.post(f"{API_URI}/ingestion/{batch_id}", headers=headers, data=data)
+        r = client.post(f"{API_URI}/ingestion/{batch_id}", headers=headers, json=data)
         assert r.status_code == 200
 
         # GET - valid batch - not_filled yet
@@ -155,7 +155,7 @@ class TestApp(SeadataTests):
             request_id=batch_id, api_function="delete_batch", parameters=parameters
         )
 
-        r = client.delete(f"{API_URI}/ingestion", headers=headers, data=data)
+        r = client.delete(f"{API_URI}/ingestion", headers=headers, json=data)
         assert r.status_code == 200
 
         time.sleep(5)

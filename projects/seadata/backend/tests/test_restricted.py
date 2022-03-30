@@ -36,7 +36,7 @@ class TestApp(SeadataTests):
         data = self.get_input_data(
             request_id=order_id, api_function="download_restricted_order"
         )
-        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers, data=data)
+        r = client.post(f"{API_URI}/restricted/my_order_id", headers=headers, json=data)
         # The request is accepted because no input validation is implemented.
         # The errors will be raised by celery
         assert r.status_code == 200
@@ -64,7 +64,7 @@ class TestApp(SeadataTests):
             parameters=parameters,
         )
 
-        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, json=data)
         assert r.status_code == 200
 
         # Sending a second restricted order request to verify the merge
@@ -89,10 +89,10 @@ class TestApp(SeadataTests):
             parameters=parameters,
         )
 
-        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, data=data)
+        r = client.post(f"{API_URI}/restricted/{order_id}", headers=headers, json=data)
         assert r.status_code == 200
 
-        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, data=data)
+        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, json=data)
         assert r.status_code == 200
 
         content = self.get_seadata_response(r)
@@ -103,7 +103,7 @@ class TestApp(SeadataTests):
 
         time.sleep(20)
 
-        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, data=data)
+        r = client.get(f"{API_URI}/orders/{order_id}", headers=headers, json=data)
         assert r.status_code == 200
 
         content = self.get_seadata_response(r)
