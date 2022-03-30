@@ -23,7 +23,7 @@ class TestApp(SeadataTests):
 
         headers = self.login(client)
 
-        r = client.post(f"{API_URI}/resourceslist", headers=headers)
+        r = client.post(f"{API_URI}/resourceslist", headers=headers, json={})
         assert r.status_code == 400
         response = self.get_content(r)
 
