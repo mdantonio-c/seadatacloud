@@ -44,7 +44,7 @@ class TestApp(SeadataTests):
         headers = self.login(client)
 
         # POST - missing parameters
-        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers)
+        r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, json={})
         assert r.status_code == 400
         response = self.get_content(r)
 
