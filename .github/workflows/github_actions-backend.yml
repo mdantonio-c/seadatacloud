@@ -9,7 +9,7 @@ env:
   PROJECT: seadata
 
 jobs:
-  backend-tests:
+  Development mode:
     runs-on: ubuntu-20.04
     timeout-minutes: 20
 
@@ -30,7 +30,7 @@ jobs:
           IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
 
           # Please note the comma after SEADATA_PRIVILEGED_USERS,
-          # it a added to test the initialization fn resilience in case of errors
+          # it is added to test the initialization func resilience in case of errors
           rapydo --testing -e SEADATA_EDMO_CODE=1234 -e SEADATA_PRIVILEGED_USERS=${IRODS_USER}, -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_INGESTION}
           sudo mkdir -p /nfs/share/batches
@@ -59,10 +59,41 @@ jobs:
           project: ${PROJECT}
           step: backend
 
+      - name: Print Logs
+        if: failure()
+        run: tail -100 data/logs/backend-server.log
+
+      - name: Docker Logs
+        if: failure()
+        run: |
+          rapydo logs
+
+  Production mode:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - uses: rapydo/actions/install@v1
+        with:
+          project: ${PROJECT}
+
+      - name: Coverage
+        uses: rapydo/actions/coverage@v1
+        with:
+          repository: projects/${PROJECT}
+          project: ${PROJECT}
+          step: backend
+
       - name: Production mode
         run: |
-          rapydo remove --all
+
           IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
+          IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
           rapydo --testing --prod -e SEADATA_EDMO_CODE=1234 -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           rapydo pull --quiet
           rapydo ssl --volatile
