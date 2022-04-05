@@ -9,7 +9,7 @@ env:
   PROJECT: seadata
 
 jobs:
-  Development mode:
+  Development-mode:
     runs-on: ubuntu-20.04
     timeout-minutes: 20
 
@@ -68,7 +68,7 @@ jobs:
         run: |
           rapydo logs
 
-  Production mode:
+  Production-mode:
     runs-on: ubuntu-20.04
     timeout-minutes: 20
 
