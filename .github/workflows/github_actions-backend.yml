@@ -82,13 +82,6 @@ jobs:
         with:
           project: ${PROJECT}
 
-      - name: Coverage
-        uses: rapydo/actions/coverage@v1
-        with:
-          repository: projects/${PROJECT}
-          project: ${PROJECT}
-          step: backend
-
       - name: Production mode
         run: |
 
@@ -96,6 +89,7 @@ jobs:
           IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
           rapydo --testing --prod -e SEADATA_EDMO_CODE=1234 -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
           rapydo pull --quiet
+          rapydo build
           rapydo ssl --volatile
           rapydo start
           sleep 45
