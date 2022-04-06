@@ -244,6 +244,7 @@ class SeaDataEndpoint(EndpointResource):
         headers: Optional[Dict[str, str]] = None,
         head_method: bool = False,
         allow_html: bool = False,
+        force_json: bool = False,
     ) -> Response:
 
         # Locally apply the response wrapper, no longer available in the core
