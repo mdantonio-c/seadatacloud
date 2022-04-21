@@ -18,7 +18,7 @@ from seadata.connectors.rabbit_queue import prepare_message
 from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, notify_error
 
-TIMEOUT = 180
+TIMEOUT = 1800
 
 logging.getLogger("b2handle").setLevel(logging.WARNING)
 b2handle_client = b2handle.instantiate_for_read_access()
