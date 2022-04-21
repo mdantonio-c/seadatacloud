@@ -18,7 +18,7 @@ from seadata.connectors.irods import IrodsException
 from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, notify_error
 
-TIMEOUT = 180
+TIMEOUT = 1800
 
 DOWNLOAD_HEADERS = {
     "User-Agent": "SDC CDI HTTP-APIs",

@@ -9,7 +9,7 @@ from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
 
-TIMEOUT = 180
+TIMEOUT = 1800
 
 
 def recursive_list_files(imain: irods.IrodsPythonExt, irods_path: str) -> List[str]:

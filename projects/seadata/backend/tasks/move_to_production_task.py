@@ -17,7 +17,7 @@ from seadata.tasks.seadata import ext_api, notify_error
 
 pmaker = PIDgenerator()
 
-TIMEOUT = 180
+TIMEOUT = 1800
 
 
 @CeleryExt.task()

@@ -8,7 +8,7 @@ from seadata.connectors import irods
 from seadata.endpoints import ErrorCodes
 from seadata.tasks.seadata import ext_api, notify_error
 
-TIMEOUT = 180
+TIMEOUT = 1800
 
 
 @CeleryExt.task()
