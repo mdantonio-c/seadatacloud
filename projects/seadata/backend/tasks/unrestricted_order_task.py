@@ -49,7 +49,7 @@ def unrestricted_order(
     # SETUP
     local_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
     local_zip_dir = local_dir.joinpath("tobezipped")
-    local_zip_dir.mkdir(parents=True)
+    local_zip_dir.mkdir(parents=True, exist_ok=True)
 
     r = redis.get_instance().r
     try:

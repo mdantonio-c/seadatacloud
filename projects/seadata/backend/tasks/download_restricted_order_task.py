@@ -207,7 +207,7 @@ def download_restricted_order(
             log.info("Request status = {}", r.status_code)
 
             local_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
-            local_dir.mkdir(exist_ok=True)
+            local_dir.mkdir(exist_ok=True, exist_ok=True)
             log.info("Local dir = {}", local_dir)
 
             local_zip_path = local_dir.joinpath(file_name)
