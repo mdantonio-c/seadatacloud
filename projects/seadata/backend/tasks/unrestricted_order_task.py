@@ -354,7 +354,7 @@ def unrestricted_order(
                 "step": counter,
                 "verified": verified,
                 "errors": len(errors),
-                "zip": zip_ipath,
+                "zip": str(zip_ipath),
             }
             self.update_state(state="COMPLETED", meta=out)
 
