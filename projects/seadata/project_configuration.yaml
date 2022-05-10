@@ -23,6 +23,11 @@ variables:
   env:
     SEADATA_API_VERSION: 1.2.2.0002
 
+    # Normal Ubuntu 22.04 python 3.10 backend works fine in DEV
+    # but the build fails at csc
+    BACKEND_BUILD_MODE: backend-legacy39
+    PYTHON_PATH: /usr/local/lib/python3.9/dist-packages
+
     LOG_LEVEL: INFO
     AUTH_SERVICE: sqlalchemy
     CELERY_ENABLE_CONNECTOR: 1
