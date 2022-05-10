@@ -13,8 +13,14 @@ if True:
 
     warnings.filterwarnings(
         "ignore",
-        # raised when imprting b2handle
+        # raised when imprting b2handle on python 3.10
         message="the imp module is deprecated in favour of importlib and slated for removal in Python 3.12; see the module's documentation for alternative uses",
+    )
+
+    warnings.filterwarnings(
+        "ignore",
+        # raised when imprting b2handle on python 3.9
+        message="the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses",
     )
 
 from restapi import decorators
