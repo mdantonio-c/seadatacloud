@@ -133,7 +133,7 @@ services:
         CURRENT_UID: ${CURRENT_UID}
         CURRENT_GID: ${CURRENT_GID}
     image: ${REGISTRY_HOST}${COMPOSE_PROJECT_NAME}/backend:${RAPYDO_VERSION}
-    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q celery -n worker-%h
+    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q celery -n ${COMPOSE_PROJECT_NAME}-%h
     volumes:
       - ${RESOURCES_LOCALPATH}:${SEADATA_RESOURCES_MOUNTPOINT}
     environment:
@@ -207,7 +207,7 @@ services:
         CURRENT_GID: ${CURRENT_GID}
     image: ${REGISTRY_HOST}${COMPOSE_PROJECT_NAME}/backend:${RAPYDO_VERSION}
     entrypoint: docker-entrypoint-celery
-    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q ingestion -n worker-%h
+    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q ingestion -n ${COMPOSE_PROJECT_NAME}-%h
     # user: developer
     working_dir: /code
     volumes:
@@ -305,7 +305,7 @@ services:
         CURRENT_GID: ${CURRENT_GID}
     image: ${REGISTRY_HOST}${COMPOSE_PROJECT_NAME}/backend:${RAPYDO_VERSION}
     entrypoint: docker-entrypoint-celery
-    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q restricted -n worker-%h
+    command: celery --app restapi.connectors.celery.worker.celery_app worker --concurrency=1 -Ofair -Q restricted -n ${COMPOSE_PROJECT_NAME}-%h
     # user: developer
     working_dir: /code
     volumes:
