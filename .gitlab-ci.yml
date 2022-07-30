@@ -1,4 +1,4 @@
-image: python:3.4
+image: python:3.10
 
 variables:
   DOCKER_COMPOSE_VERSION: 1.7.0
