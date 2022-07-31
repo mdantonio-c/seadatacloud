@@ -3,9 +3,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-from celery.app.task import Task
 from restapi.connectors import redis
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -22,7 +21,11 @@ TIMEOUT = 1800
 
 @CeleryExt.task(idempotent=False)
 def move_to_production_task(
-    self: Task, batch_id: str, batch_path: str, cloud_path: str, myjson: Dict[str, Any]
+    self: Task[[str, str, str, Dict[str, Any]], str],
+    batch_id: str,
+    batch_path: str,
+    cloud_path: str,
+    myjson: Dict[str, Any],
 ) -> str:
 
     self.update_state(state="STARTING", meta={"total": None, "step": 0, "errors": 0})

@@ -5,11 +5,10 @@ from pathlib import Path
 from shutil import make_archive, rmtree
 from typing import Any, Dict, List
 
-from celery.app.task import Task
 from plumbum import local  # type: ignore
 from plumbum.commands.processes import ProcessExecutionError  # type: ignore
 from restapi.connectors import redis
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -27,7 +26,7 @@ pmaker = PIDgenerator()
 
 @CeleryExt.task(idempotent=False)
 def unrestricted_order(
-    self: Task,
+    self: Task[[str, str.str, Dict[str, Any]], str],
     order_id: str,
     order_path: str,
     zip_file_name: str,

@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
-from celery.app.task import Task
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -13,7 +12,10 @@ TIMEOUT = 1800
 
 @CeleryExt.task(idempotent=False)
 def list_resources(
-    self: Task, batch_path: str, order_path: str, myjson: Dict[str, Any]
+    self: Task[[str, str, Dict[str, Any]], str],
+    batch_path: str,
+    order_path: str,
+    myjson: Dict[str, Any],
 ) -> str:
 
     try:

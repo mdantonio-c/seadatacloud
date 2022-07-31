@@ -6,8 +6,7 @@ from typing import Any, Dict
 from urllib.parse import urljoin
 
 import requests
-from celery.app.task import Task
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -28,7 +27,10 @@ DOWNLOAD_HEADERS = {
 
 @CeleryExt.task(idempotent=False)
 def download_batch(
-    self: Task, batch_path: str, local_path: str, myjson: Dict[str, Any]
+    self: Task[[str, str, Dict[str, Any]], str],
+    batch_path: str,
+    local_path: str,
+    myjson: Dict[str, Any],
 ) -> str:
 
     log.info("I'm {} (download_batch)", self.request.id)

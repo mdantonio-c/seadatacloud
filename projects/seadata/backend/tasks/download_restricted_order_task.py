@@ -7,10 +7,9 @@ from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
-from celery.app.task import Task
 from plumbum import local  # type: ignore
 from plumbum.commands.processes import ProcessExecutionError  # type: ignore
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -63,7 +62,10 @@ def check_params(params: Dict[str, Any]) -> Optional[Tuple[str, str]]:
 
 @CeleryExt.task(idempotent=False)
 def download_restricted_order(
-    self: Task, order_id: str, order_path: str, myjson: Dict[str, Any]
+    self: Task[[str, str, Dict[str, Any]], str],
+    order_id: str,
+    order_path: str,
+    myjson: Dict[str, Any],
 ) -> str:
 
     myjson["parameters"]["request_id"] = myjson["request_id"]

@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from celery.app.task import Task
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import ImportManagerAPI
@@ -31,7 +30,9 @@ def notify_error(
     error: Tuple[str, str],
     payload: Dict[str, Any],
     backdoor: bool,
-    task: Task,
+    # Type ignore is to be fixed with:
+    # https://github.com/python/mypy/issues/5876
+    task: Task[[], Any],  # type: ignore
     extra: Optional[Any] = None,
     subject: Optional[Path] = None,
     edmo_code: Optional[int] = None,

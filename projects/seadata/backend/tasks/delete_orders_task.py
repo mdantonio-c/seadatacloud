@@ -2,9 +2,8 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List
 
-from celery.app.task import Task
 from glom import glom
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -16,7 +15,10 @@ TIMEOUT = 1800
 
 @CeleryExt.task(idempotent=False)
 def delete_orders(
-    self: Task, orders_path: str, local_orders_path: str, myjson: Dict[str, Any]
+    self: Task[[str, str, Dict[str, Any]], str],
+    orders_path: str,
+    local_orders_path: str,
+    myjson: Dict[str, Any],
 ) -> str:
 
     if "parameters" not in myjson:

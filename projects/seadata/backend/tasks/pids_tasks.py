@@ -2,9 +2,8 @@ import os
 from pathlib import Path
 from typing import Dict, List
 
-from celery.app.task import Task
 from restapi.connectors import redis
-from restapi.connectors.celery import CeleryExt
+from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
 from seadata.connectors import irods
@@ -26,7 +25,9 @@ def recursive_list_files(imain: irods.IrodsPythonExt, irods_path: str) -> List[s
 
 
 @CeleryExt.task(idempotent=False)
-def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
+def cache_batch_pids(
+    self: Task[[str], Dict[str, int]], irods_path: str
+) -> Dict[str, int]:
 
     log.info("Task cache_batch_pids working on: {}", irods_path)
 
@@ -95,7 +96,7 @@ def cache_batch_pids(self: Task, irods_path: str) -> Dict[str, int]:
 
 
 @CeleryExt.task(idempotent=False)
-def inspect_pids_cache(self: Task) -> None:
+def inspect_pids_cache(self: Task[[], None]) -> None:
 
     log.info("Inspecting cache...")
     counter = 0
