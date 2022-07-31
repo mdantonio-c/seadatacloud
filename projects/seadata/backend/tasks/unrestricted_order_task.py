@@ -26,7 +26,7 @@ pmaker = PIDgenerator()
 
 @CeleryExt.task(idempotent=False)
 def unrestricted_order(
-    self: Task[[str, str.str, Dict[str, Any]], str],
+    self: Task[[str, str, str, Dict[str, Any]], str],
     order_id: str,
     order_path: str,
     zip_file_name: str,

@@ -30,9 +30,9 @@ def notify_error(
     error: Tuple[str, str],
     payload: Dict[str, Any],
     backdoor: bool,
-    # Type ignore is to be fixed with:
+    # Any annotation to be fixed with:
     # https://github.com/python/mypy/issues/5876
-    task: Task[[], Any],  # type: ignore
+    task: Any,
     extra: Optional[Any] = None,
     subject: Optional[Path] = None,
     edmo_code: Optional[int] = None,
