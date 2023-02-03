@@ -38,8 +38,16 @@ def download_batch(
     log.info("Batch local path: {}", local_path)
 
     params = myjson.get("parameters", {})
-    backdoor = params.pop("backdoor", False)
     request_edmo_code = myjson.get("edmo_code", None)
+    if type(params) != dict:
+        return notify_error(
+            ErrorCodes.MISSING_BATCHES_PARAMETER,
+            myjson,
+            False,
+            self,
+            edmo_code=request_edmo_code,
+        )
+    backdoor = params.pop("backdoor", False)
 
     batch_number = params.get("batch_number")
     if batch_number is None:
