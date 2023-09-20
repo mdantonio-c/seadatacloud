@@ -41,7 +41,7 @@ class TestApp(SeadataTests):
         r = client.patch(f"{API_URI}/ingestion")
         assert r.status_code == 405
 
-        headers = self.login(client)
+        headers, _ = self.do_login(client, None, None)
 
         # POST - missing parameters
         r = client.post(f"{API_URI}/ingestion/my_batch_id", headers=headers, json={})
@@ -116,7 +116,7 @@ class TestApp(SeadataTests):
         assert "files" in content
         assert content["batch"] == batch_id
         assert content["status"] == "not_filled"
-        assert content["files"] == []
+        # assert content["files"] == []  # without irods the check on the filesystem is not done
 
         time.sleep(6)
 
@@ -139,13 +139,16 @@ class TestApp(SeadataTests):
         assert "name" in content["files"][file_name]
         assert "path" in content["files"][file_name]
         assert "object_type" in content["files"][file_name]
-        assert "owner" in content["files"][file_name]
+        # assert "owner" in content["files"][file_name] # without irods this parameter is unuseful
         assert "content_length" in content["files"][file_name]
         assert "created" in content["files"][file_name]
         assert "last_modified" in content["files"][file_name]
         assert content["files"][file_name]["name"] == file_name
-        assert content["files"][file_name]["path"] == f"/tempZone/batches/{batch_id}"
-        assert content["files"][file_name]["owner"] == Env.get("IRODS_USER", "")
+        # assert content["files"][file_name]["owner"] == Env.get("IRODS_USER", "") # without irods this parameter is unuseful
+        assert (
+            content["files"][file_name]["path"]
+            == f"{ Env.get('SEADATA_RESOURCES_MOUNTPOINT','')}/batches/{batch_id}"
+        )
         assert content["files"][file_name]["object_type"] == "dataobject"
         assert content["files"][file_name]["content_length"] == int(file_size)
 

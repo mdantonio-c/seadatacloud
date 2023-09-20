@@ -8,6 +8,7 @@ import requests
 from restapi.config import PRODUCTION
 from restapi.connectors import sqlalchemy
 from restapi.env import Env
+from restapi.exceptions import RestApiException
 from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.utilities.logs import log
@@ -154,32 +155,79 @@ class SeaDataEndpoint(EndpointResource):
             prefix = DEFAULT_IMAGE_PREFIX
         return f"{prefix}/{qc_name}"
 
-    def get_batch_status(
-        self, imain: irods.IrodsPythonExt, irods_path: str, local_path: Path
-    ) -> Tuple[int, Union[List[str], Dict[str, Dict[str, Any]]]]:
+    def list(
+        self,
+        path: Optional[Path] = None,
+        recursive: bool = False,
+        detailed: bool = False,
+    ) -> Dict[str, Dict[str, Any]]:
+        """List the files inside a path/collection"""
 
-        if not imain.is_collection(irods_path):
-            return MISSING_BATCH, []
+        if path is None:
+            # TODO check if okay
+            return {}
+
+        if path.is_file():
+            # TODO is okay raising an exception here?
+            raise RestApiException("Cannot list a file; you may get it instead.")
+
+        data: Dict[str, Dict[str, Any]] = {}
+
+        for el in path.iterdir():
+            if el.is_dir():
+                row: Dict[str, Any] = {}
+                key = el.name
+                row["name"] = el.name
+                row["objects"] = {}
+                if recursive:
+                    row["objects"] = self.list(
+                        path=el,
+                        recursive=recursive,
+                        detailed=detailed,
+                    )
+                row["path"] = str(el.parent)
+                row["object_type"] = "directory"
+                # if detailed:
+                #     row["owner"] = "-" # without irods this parameter is unuseful
+
+                data[key] = row
+            elif el.is_file():
+                row = {}
+                key = el.name
+                row["name"] = el.name
+                row["path"] = str(el.parent)
+                row["object_type"] = "dataobject"
+
+                if detailed:
+                    # row["owner"] = str(el.owner) # without irods this parameter is unuseful
+                    row["content_length"] = el.stat().st_size
+                    row["created"] = datetime.fromtimestamp(
+                        el.stat().st_ctime
+                    ).strftime("%Y-%m-%d, %H:%M:%S")
+                    row["last_modified"] = datetime.fromtimestamp(
+                        el.stat().st_mtime
+                    ).strftime("%Y-%m-%d, %H:%M:%S")
+                data[key] = row
+
+        return data
+
+    def get_batch_status(
+        self, local_path: Path
+    ) -> Tuple[int, Union[List[str], Dict[str, Dict[str, Any]]]]:
 
         if not local_path.exists():
             return MISSING_BATCH, []
 
-        irods_files = imain.list(irods_path, detailed=True)
+        fs_files = self.list(local_path, detailed=True)
 
-        # Too many files on irods
-        fnum = len(irods_files)
+        # TODO Too many files on irods --> is a problem also for the filesystem?
+        fnum = len(fs_files)
         if fnum > 1:
-            return BATCH_MISCONFIGURATION, irods_files
+            return BATCH_MISCONFIGURATION, fs_files
 
         # 1 file on irods -> everything is ok
         if fnum == 1:
-            return ENABLED_BATCH, irods_files
-
-        # No files on irods, let's check on filesystem
-        fs_files = []
-        for x in local_path.glob("*"):
-            if x.is_file():
-                fs_files.append(x.name)
+            return ENABLED_BATCH, fs_files
 
         if not fs_files:
             return NOT_FILLED_BATCH, fs_files
