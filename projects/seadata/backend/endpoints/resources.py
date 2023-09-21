@@ -13,7 +13,6 @@ from restapi.exceptions import Conflict, NotFound, RestApiException, ServiceUnav
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from seadata.connectors.rancher import Rancher
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
@@ -94,39 +93,32 @@ class Resources(SeaDataEndpoint):
 
         ###########################
         # get name from batch
-        try:
-            imain = irods.get_instance()
-            batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
-            local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
-            log.info("Batch irods path: {}", batch_path)
-            log.info("Batch local path: {}", local_path)
-            batch_status, batch_files = self.get_batch_status(
-                imain, batch_path, local_path
+        local_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
+        log.info("Batch local path: {}", local_path)
+        batch_status, batch_files = self.get_batch_status(local_path)
+
+        if batch_status == MISSING_BATCH:
+            raise NotFound(f"Batch '{batch_id}' not found (or no permissions)")
+
+        if batch_status == NOT_FILLED_BATCH:
+            raise RestApiException(
+                # Bad Resource
+                f"Batch '{batch_id}' not yet filled",
+                status_code=410,
             )
 
-            if batch_status == MISSING_BATCH:
-                raise NotFound(f"Batch '{batch_id}' not found (or no permissions)")
-
-            if batch_status == NOT_FILLED_BATCH:
-                raise RestApiException(
-                    # Bad Resource
-                    f"Batch '{batch_id}' not yet filled",
-                    status_code=410,
-                )
-
-            if batch_status == BATCH_MISCONFIGURATION:
-                log.error(
-                    "Misconfiguration: {} files in {} (expected 1)",
-                    len(batch_files),
-                    batch_path,
-                )
-                raise RestApiException(
-                    f"Misconfiguration for batch_id {batch_id}",
-                    # Bad Resource
-                    status_code=410,
-                )
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        if batch_status == BATCH_MISCONFIGURATION:
+            # TODO is a check we have to mantain also in the no-irods version?
+            log.error(
+                "Misconfiguration: {} files in {} (expected 1)",
+                len(batch_files),
+                local_path,
+            )
+            raise RestApiException(
+                f"Misconfiguration for batch_id {batch_id}",
+                # Bad Resource
+                status_code=410,
+            )
 
         ###################
         # Parameters (and checks)
