@@ -23,6 +23,8 @@ PARTIALLY_ENABLED_BATCH = 2
 ENABLED_BATCH = 3
 BATCH_MISCONFIGURATION = 4
 
+BATCH_DQ_FOLDER_NAME = "original"
+
 
 DEFAULT_IMAGE_PREFIX = "docker"
 
@@ -178,7 +180,7 @@ class SeaDataEndpoint(EndpointResource):
         data: Dict[str, Dict[str, Any]] = {}
 
         for el in path.iterdir():
-            if el.is_dir():
+            if el.is_dir() and el.name != BATCH_DQ_FOLDER_NAME:
                 row: Dict[str, Any] = {}
                 key = el.name
                 row["name"] = el.name
