@@ -43,6 +43,7 @@ These are the paths to the data on the hosts
 that runs containers (both backend, celery and QC containers)
 """
 INGESTION_DIR = seadata_vars.get("workspace_ingestion") or "batches"
+PRODUCTION_DIR = seadata_vars.get("workspace_production") or "cloud"
 ORDERS_DIR = seadata_vars.get("workspace_orders") or "orders"
 
 """
@@ -59,6 +60,9 @@ FS_PATH_IN_CONTAINER = "/usr/share/batch"
 # About the '/usr/share', I am not sure, it might be read form some
 # environmental variable passed to the container. But it is safe
 # to leave it hard-coded like this.
+
+"""this is the prefix used for UID generation. It is related to the single instances and should be defined in the .projectrc"""
+UID_PREFIX = seadata_vars.get("uid_prefix") or "21.L00000"
 
 
 class SeaDataEndpoint(EndpointResource):

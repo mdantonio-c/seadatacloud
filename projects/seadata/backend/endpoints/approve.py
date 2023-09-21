@@ -10,8 +10,12 @@ from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.connectors import irods
-from seadata.endpoints import INGESTION_COLL, PRODUCTION_COLL, EndpointsInputSchema
+from seadata.endpoints import (
+    INGESTION_DIR,
+    MOUNTPOINT,
+    PRODUCTION_DIR,
+    EndpointsInputSchema,
+)
 from seadata.endpoints import Metadata as md
 from seadata.endpoints import SeaDataEndpoint
 
@@ -62,37 +66,32 @@ class MoveToProductionEndpoint(SeaDataEndpoint):
             filenames.append(data.get(md.tid))
 
         ################
-        # 1. check if irods path exists
-        try:
-            imain = irods.get_instance()
-            batch_path = self.get_irods_path(imain, INGESTION_COLL, batch_id)
-            log.debug("Batch path: {}", batch_path)
+        # 1. check if local path exists
+        batch_path = MOUNTPOINT.joinpath(INGESTION_DIR, batch_id)
+        log.debug("Batch path: {}", batch_path)
 
-            if not imain.is_collection(batch_path):
-                raise NotFound(
-                    f"Batch '{batch_id}' not enabled (or no permissions)",
-                )
-
-            ################
-            # 2. make batch_id directory in production if not existing
-            prod_path = self.get_irods_path(imain, PRODUCTION_COLL, batch_id)
-            log.debug("Production path: {}", prod_path)
-            imain.create_collection_inheritable(prod_path, user.email)
-
-            ################
-            # ASYNC
-            log.info("Submit async celery task")
-
-            c = celery.get_instance()
-            task = c.celery_app.send_task(
-                "move_to_production_task",
-                args=[batch_id, batch_path, prod_path, json_input],
-                queue="ingestion",
-                routing_key="ingestion",
+        if not batch_path.is_dir():
+            raise NotFound(
+                f"Batch '{batch_id}' not enabled (or no permissions)",
             )
-            log.info("Async job: {}", task.id)
 
-            return self.return_async_id(task.id)
+        ################
+        # 2. make batch_id directory in production if not existing
+        prod_path = MOUNTPOINT.joinpath(PRODUCTION_DIR, batch_id)
+        log.debug("Production path: {}", prod_path)
+        prod_path.mkdir(parents=True, exist_ok=True)
 
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        ################
+        # ASYNC
+        log.info("Submit async celery task")
+
+        c = celery.get_instance()
+        task = c.celery_app.send_task(
+            "move_to_production_task",
+            args=[batch_id, str(batch_path), str(prod_path), json_input],
+            queue="ingestion",
+            routing_key="ingestion",
+        )
+        log.info("Async job: {}", task.id)
+
+        return self.return_async_id(task.id)

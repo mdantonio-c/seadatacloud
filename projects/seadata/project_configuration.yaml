@@ -41,7 +41,7 @@ variables:
 
     ###############################
     ACTIVATE_ICAT: 0
-    IRODS_ENABLE_CONNECTOR: 1
+    IRODS_ENABLE_CONNECTOR: 0
     IRODS_USER: irods
     IRODS_PASSWORD: "**PLACEHOLDER**"
     IRODS_ZONE: tempZone
@@ -71,12 +71,14 @@ variables:
     SEADATA_PRIVILEGED_USERS: # command separated list of privileges users
 
     SEADATA_WORKSPACE_INGESTION: batches # on filesystem (to be mounted to celery workers and rancher containers)
+    SEADATA_WORKSPACE_PRODUCTION: cloud # on filesystem (to be mounted to celery workers and rancher containers)
     SEADATA_WORKSPACE_ORDERS: orders # on filesystem (to be mounted to celery workers and rancher containers)
     SEADATA_API_IM_URL: https://importmanager.seadatanet.org/api_v1
     # This is the mount point of $RESOURCES_LOCALPATH inside the containers
     # Note that this variable has only effect in backend and celery containers
     # while QC containers uses an hard-code mount point (/usr/share)
     SEADATA_RESOURCES_MOUNTPOINT: /usr/share
+    SEADATA_UID_PREFIX:
 
     ## RANCHER
     RESOURCES_URL: https://cattle.yourdomain.com/v2-beta

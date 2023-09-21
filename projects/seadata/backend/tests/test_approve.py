@@ -19,12 +19,10 @@ class TestApp(SeadataTests):
         r = client.patch(f"{API_URI}/ingestion/my_batch_id/approve")
         assert r.status_code == 405
 
-        headers = self.login(client)
+        headers, _ = self.do_login(client, None, None)
 
         r = client.post(
-            f"{API_URI}/ingestion/my_batch_id/approve",
-            headers=headers,
-            json={}
+            f"{API_URI}/ingestion/my_batch_id/approve", headers=headers, json={}
         )
         assert r.status_code == 400
         response = self.get_content(r)

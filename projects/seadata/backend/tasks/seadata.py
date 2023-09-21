@@ -1,10 +1,11 @@
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from seadata.connectors.b2handle import PIDgenerator
-from seadata.endpoints import ImportManagerAPI
+from seadata.endpoints import UID_PREFIX, ImportManagerAPI
 
 # Size in bytes
 # TODO: move me into the configuration
@@ -68,3 +69,9 @@ def notify_error(
         task_errors.append(str(extra))
     task.update_state(state="FAILED", meta={"errors": task_errors})
     return "Failed"
+
+
+def generate_uid() -> str:
+    """generate an uid made of a prefix related to the single instance and a random uuid"""
+    new_uid = f"{UID_PREFIX}/{uuid.uuid4()}"
+    return new_uid
