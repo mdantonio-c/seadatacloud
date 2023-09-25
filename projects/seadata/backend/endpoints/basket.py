@@ -27,9 +27,10 @@ from irods.exception import NetworkException
 from restapi import decorators
 from restapi.config import get_backend_url
 from restapi.connectors import celery
-from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable
+from restapi.exceptions import BadRequest, NotFound, ServiceUnavailable, Unauthorized
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
+from restapi.services.download import Downloader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
@@ -42,19 +43,6 @@ from seadata.endpoints import (
 )
 
 TMPDIR = "/tmp"
-
-
-def get_order_zip_file_name(
-    order_id: str, restricted: bool = False, index: Optional[int] = None
-) -> str:
-
-    label = "restricted" if restricted else "unrestricted"
-    if index is None:
-        zip_file_name = f"order_{order_id}_{label}.zip"
-    else:
-        zip_file_name = f"order_{order_id}_{label}{index}.zip"
-
-    return zip_file_name
 
 
 #################
@@ -80,9 +68,13 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
             log.warning("Unable to extract numeric index from ftype {}", ftype)
 
         if index == 0:
-            return get_order_zip_file_name(order_id, restricted=restricted, index=None)
+            return self.get_order_zip_file_name(
+                order_id, restricted=restricted, index=None
+            )
 
-        return get_order_zip_file_name(order_id, restricted=restricted, index=index)
+        return self.get_order_zip_file_name(
+            order_id, restricted=restricted, index=index
+        )
 
     @decorators.endpoint(
         path="/orders/<order_id>/download/<ftype>/c/<code>",
@@ -101,65 +93,53 @@ class DownloadBasketEndpoint(SeaDataEndpoint):
 
         # log.info("DOWNLOAD DEBUG 1: {} (code '{}')", order_id, code)
 
+        order_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+
+        zip_file_name = self.get_filename_from_type(order_id, ftype)
+
+        if zip_file_name is None:
+            raise BadRequest(f"Invalid file type {ftype}")
+
+        zip_path = Path(order_path, zip_file_name)
+
+        error = f"Order '{order_id}' not found (or no permissions)"
+
+        log.debug("Checking zip path: {}", zip_path)
+        if not zip_path.is_file():
+            log.error("File not found {}", zip_path)
+            raise NotFound(error)
+
+        # check code validity
         try:
-            imain = irods.get_instance()
-            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
+            filepath_from_token = self.read_token(code)
+        except Exception as e:
+            log.error(e)
+            raise Unauthorized("Provided code is invalid")
 
-            zip_file_name = self.get_filename_from_type(order_id, ftype)
-
-            if zip_file_name is None:
-                raise BadRequest(f"Invalid file type {ftype}")
-
-            zip_ipath = Path(order_path, zip_file_name)
-
-            error = f"Order '{order_id}' not found (or no permissions)"
-
-            log.debug("Checking zip irods path: {}", zip_ipath)
-            if not imain.is_dataobject(zip_ipath):
-                log.error("File not found {}", zip_ipath)
-                raise NotFound(error)
-
-            # TOFIX: we should use a database or cache to save this,
-            # not irods metadata (known for low performances)
-            metadata = imain.get_metadata(zip_ipath)
-            iticket_code = metadata.get("iticket_code")
-
-            encoded_code = urllib.parse.quote_plus(code)
-
-            if iticket_code != encoded_code:
-                log.error("iticket code does not match {}", zip_ipath)
-                raise NotFound(error)
-
-            # NOTE: very important!
-            # use anonymous to get the session here
-            # because the ticket supply breaks the iuser session permissions
-            icom = irods.get_instance(
-                user="anonymous",
-                password="null",
-                authscheme="credentials",
+        # check if the token is related to that specific file
+        expected_filepath = f"{order_id}/{zip_file_name}"
+        if expected_filepath != filepath_from_token:
+            log.error(
+                "path from code {} does not match the requested file {}",
+                filepath_from_token,
+                expected_filepath,
             )
-            icom.ticket_supply(code)
+            raise NotFound(error)
 
-            if not icom.test_ticket(zip_ipath):
-                log.error("Invalid iticket code {}", zip_ipath)
-                raise NotFound("Invalid download code")
+        # TODO headers are still needed?
+        # headers = {
+        #     "Content-Transfer-Encoding": "binary",
+        #     "Content-Disposition": f"attachment; filename={zip_file_name}",
+        # }
+        msg = prepare_message(self, json=json, log_string="end", status="sent")
+        log_into_queue(self, msg)
 
-            # tickets = imain.list_tickets()
-            # print(tickets)
+        log.info("Request download for path: {}", zip_path)
 
-            # iticket mod "$TICKET" add user anonymous
-            # iticket mod "$TICKET" uses 1
-            # iticket mod "$TICKET" expire "2018-03-23.06:50:00"
-
-            headers = {
-                "Content-Transfer-Encoding": "binary",
-                "Content-Disposition": f"attachment; filename={zip_file_name}",
-            }
-            msg = prepare_message(self, json=json, log_string="end", status="sent")
-            log_into_queue(self, msg)
-            return icom.stream_ticket(zip_ipath, headers=headers)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        return Downloader.send_file_streamed(
+            zip_file_name,
+            subfolder=order_path,
+        )
 
 
 class BasketEndpoint(SeaDataEndpoint):
@@ -179,54 +159,74 @@ class BasketEndpoint(SeaDataEndpoint):
         msg = prepare_message(self, json=None, log_string="start")
         log_into_queue(self, msg)
 
-        try:
-            imain = irods.get_instance()
-            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
-            log.debug("Order path: {}", order_path)
-            if not imain.is_collection(order_path):
-                raise NotFound(f"Order '{order_id}': not existing")
+        order_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+        log.debug("Order path: {}", order_path)
+        if not order_path.exists():
+            raise NotFound(f"Order '{order_id}': not existing")
 
-            ##################
-            ils = imain.list(order_path, detailed=True)
+        ##################
+        ls = self.list(order_path, detailed=True)
 
-            u = get_order_zip_file_name(order_id, restricted=False, index=1)
-            # if a splitted unrestricted zip exists, skip the unsplitted file
-            if u in ils:
-                u = get_order_zip_file_name(order_id, restricted=False, index=None)
-                ils.pop(u, None)
+        u = self.get_order_zip_file_name(order_id, restricted=False, index=1)
+        # if a split unrestricted zip exists, skip the unsplitted file
+        if u in ls:
+            u = self.get_order_zip_file_name(order_id, restricted=False, index=None)
+            ls.pop(u, None)
 
-            r = get_order_zip_file_name(order_id, restricted=True, index=1)
-            # if a splitted restricted zip exists, skip the unsplitted file
-            if r in ils:
-                r = get_order_zip_file_name(order_id, restricted=True, index=None)
-                ils.pop(r, None)
+        r = self.get_order_zip_file_name(order_id, restricted=True, index=1)
+        # if a split restricted zip exists, skip the unsplitted file
+        if r in ls:
+            r = self.get_order_zip_file_name(order_id, restricted=True, index=None)
+            ls.pop(r, None)
 
-            response = []
+        response = []
 
-            for _, data in ils.items():
-                name = data.get("name")
+        for _, data in ls.items():
+            name = data.get("name")
 
-                if not name:  # pragma: no cover
-                    continue
+            if not name:  # pragma: no cover
+                continue
 
-                if name.endswith(".bak"):
-                    continue
+            if name.endswith(".bak") or name.endswith(".seed"):
+                continue
 
-                path = data.get("path")
-                if not path:  # pragma: no cover
-                    log.warning("Wrong entry, missing path: {}", data)
-                    continue
+            path = data.get("path")
+            if not path:  # pragma: no cover
+                log.warning("Wrong entry, missing path: {}", data)
+                continue
+            else:
+                # get download url as metadata
+                # check if there is a seed file. If not it means that no urls are available for that file
+                seed_file = Path(path, ".seed")
+                if not seed_file.exists():
+                    data["URL"] = ""
                 else:
-                    ipath = Path(path, name)
-                    metadata = imain.get_metadata(ipath)
-                    data["URL"] = metadata.get("download")
-                    response.append(data)
+                    # NOTE with irods the code was a metadata of the file. This part replace that function
+                    # NOTE that the tickets are different every time they are generated, but they are based on the same seed. If the ticket has always to be the same, this approach has to be changed and it has to be saved in the local db
+                    # check if it is restricted
+                    restricted = "unrestricted" not in name
+                    # check if it has an index
+                    label = "restricted" if restricted else "unrestricted"
+                    stripped_name = name.strip(f"order_{order_id}_{label}").strip(
+                        ".zip"
+                    )
+                    index = stripped_name if stripped_name else None
+                    files = {name: data}
+                    download_metadata = self.get_download(
+                        order_id,
+                        Path(path),
+                        files,
+                        restricted,
+                        index,
+                        get_only_url=True,
+                    )
+                    data["URL"] = download_metadata["url"]
 
-            msg = prepare_message(self, log_string="end", status="completed")
-            log_into_queue(self, msg)
-            return self.response(response)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+                response.append(data)
+
+        msg = prepare_message(self, log_string="end", status="completed")
+        log_into_queue(self, msg)
+        return self.response(response)
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -272,114 +272,36 @@ class BasketEndpoint(SeaDataEndpoint):
         ##################
         # Create the path
         log.info("Order request: {}", order_id)
-        try:
-            imain = irods.get_instance()
-            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
-            log.debug("Order path: {}", order_path)
-            if not imain.is_collection(order_path):
-                # Create the path and set permissions
-                imain.create_collection_inheritable(order_path, user.email)
+        order_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+        log.debug("Order path: {}", order_path)
+        if not order_path.exists():
+            # Create the path and set permissions
+            order_path.mkdir(parents=True)
 
-            ##################
-            # Does the zip already exists?
-            zip_file_name = filename + ".zip"
-            zip_ipath = str(Path(order_path, zip_file_name))
-            if imain.is_dataobject(zip_ipath):
-                # give error here
-                # return {order_id: 'already exists'}
-                # json_input['status'] = 'exists'
-                json_input["parameters"] = {"status": "exists"}
-                return self.response(json_input)
-
-            ################
-            # ASYNC
-            if len(pids) > 0:
-                log.info("Submit async celery task")
-                c = celery.get_instance()
-                task = c.celery_app.send_task(
-                    "unrestricted_order",
-                    args=[order_id, order_path, zip_file_name, json_input],
-                )
-                log.info("Async job: {}", task.id)
-                return self.return_async_id(task.id)
-
-            return self.response({"status": "enabled"})
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
-
-    def no_slash_ticket(self, imain: irods.IrodsPythonExt, path: str) -> str:
-        """irods ticket for HTTP"""
-        # TODO: prc list tickets so we can avoid more than once
-        # TODO: investigate iticket expiration
-        # iticket mod Ticket_string-or-id uses/expire string-or-none
-
-        unwanted = ["/", "%"]
-        # Initialize the ticket with an unwanted characters to enter the first loop
-        ticket = unwanted[0]
-        # Create an iticket that does not contains any of the unwanted characters
-        while any(c in ticket for c in unwanted):
-            obj = imain.ticket(path)
-            ticket = obj.ticket
-        encoded = urllib.parse.quote_plus(ticket)
-        log.info("Ticket: {} -> {}", ticket, encoded)
-        return encoded
-
-    def get_download(
-        self,
-        imain: irods.IrodsPythonExt,
-        order_id: str,
-        order_path: str,
-        files: Dict[str, Dict[str, Any]],
-        restricted: bool = False,
-        index: Optional[int] = None,
-    ) -> Optional[Dict[str, Any]]:
-
-        zip_file_name = get_order_zip_file_name(order_id, restricted, index)
-
-        if zip_file_name not in files:
-            return None
-
-        zip_ipath = str(Path(order_path, zip_file_name))
-        log.debug("Zip irods path: {}", zip_ipath)
-
-        code = self.no_slash_ticket(imain, zip_ipath)
-        ftype = ""
-        if restricted:
-            ftype += "1"
-        else:
-            ftype += "0"
-        if index is None:
-            ftype += "0"
-        else:
-            ftype += str(index)
-
-        host = get_backend_url()
-
-        # too many work for THEM to skip the add of the protocol
-        # they prefer to get back an incomplete url
-        host = host.replace("https://", "").replace("http://", "")
-
-        url = f"{host}/api/orders/{order_id}/download/{ftype}/c/{code}"
-
-        # If metadata already exists, remove them:
-        # FIXME: verify if iticket_code is set and then invalidate it
-        imain.remove_metadata(zip_ipath, "iticket_code")
-        imain.remove_metadata(zip_ipath, "download")
         ##################
-        # Set the url as Metadata in the irods file
-        imain.set_metadata(zip_ipath, download=url)
+        # Does the zip already exists?
+        zip_file_name = filename + ".zip"
+        zip_path = Path(order_path, zip_file_name)
+        if zip_path.exists():
+            # give error here
+            # return {order_id: 'already exists'}
+            # json_input['status'] = 'exists'
+            json_input["parameters"] = {"status": "exists"}
+            return self.response(json_input)
 
-        # TOFIX: we should add a database or cache to save this,
-        # not irods metadata (known for low performances)
-        imain.set_metadata(zip_ipath, iticket_code=code)
+        ################
+        # ASYNC
+        if len(pids) > 0:
+            log.info("Submit async celery task")
+            c = celery.get_instance()
+            task = c.celery_app.send_task(
+                "unrestricted_order",
+                args=[order_id, str(order_path), zip_file_name, json_input],
+            )
+            log.info("Async job: {}", task.id)
+            return self.return_async_id(task.id)
 
-        info = files[zip_file_name]
-
-        return {
-            "name": zip_file_name,
-            "url": url,
-            "size": info.get("content_length", 0),
-        }
+        return self.response({"status": "enabled"})
 
     @decorators.auth.require()
     @decorators.endpoint(
@@ -394,102 +316,91 @@ class BasketEndpoint(SeaDataEndpoint):
         log_into_queue(self, msg)
 
         try:
-            imain = irods.get_instance()
-            try:
-                order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
-                log.debug("Order path: {}", order_path)
-            except BaseException:
-                raise NotFound("Order not found")
+            order_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+            log.debug("Order path: {}", order_path)
+        except BaseException:
+            raise NotFound("Order not found")
 
-            response = []
+        response = []
 
-            files_in_irods = imain.list(order_path, detailed=True)
+        files_in_order = self.list(order_path, detailed=True)
 
-            # Going through all possible file names of zip files
+        # Going through all possible file names of zip files
 
-            # unrestricted zip
-            # info = self.get_download(
-            #     imain, order_id, order_path, files_in_irods,
-            #     restricted=False, index=None)
-            # if info is not None:
-            #     response.append(info)
+        # unrestricted zip
+        # info = self.get_download(
+        #     imain, order_id, order_path, files_in_irods,
+        #     restricted=False, index=None)
+        # if info is not None:
+        #     response.append(info)
 
-            # checking for splitted unrestricted zip
+        # checking for split unrestricted zip
+        info = self.get_download(
+            order_id, order_path, files_in_order, restricted=False, index=1
+        )
+
+        # No split zip found, looking for the single unrestricted zip
+        if info is None:
             info = self.get_download(
-                imain, order_id, order_path, files_in_irods, restricted=False, index=1
+                order_id,
+                order_path,
+                files_in_order,
+                restricted=False,
+                index=None,
             )
-
-            # No split zip found, looking for the single unrestricted zip
-            if info is None:
+            if info is not None:
+                response.append(info)
+        # When found one split, looking for more:
+        else:
+            response.append(info)
+            for index in range(2, 100):
                 info = self.get_download(
-                    imain,
                     order_id,
                     order_path,
-                    files_in_irods,
+                    files_in_order,
                     restricted=False,
-                    index=None,
+                    index=index,
                 )
                 if info is not None:
                     response.append(info)
-            # When found one split, looking for more:
-            else:
-                response.append(info)
-                for index in range(2, 100):
-                    info = self.get_download(
-                        imain,
-                        order_id,
-                        order_path,
-                        files_in_irods,
-                        restricted=False,
-                        index=index,
-                    )
-                    if info is not None:
-                        response.append(info)
 
-            # checking for splitted restricted zip
+        # checking for split restricted zip
+        info = self.get_download(
+            order_id, order_path, files_in_order, restricted=True, index=1
+        )
+
+        # No split zip found, looking for the single restricted zip
+        if info is None:
             info = self.get_download(
-                imain, order_id, order_path, files_in_irods, restricted=True, index=1
+                order_id,
+                order_path,
+                files_in_order,
+                restricted=True,
+                index=None,
             )
-
-            # No split zip found, looking for the single restricted zip
-            if info is None:
+            if info is not None:
+                response.append(info)
+        # When found one split, looking for more:
+        else:
+            response.append(info)
+            for index in range(2, 100):
                 info = self.get_download(
-                    imain,
                     order_id,
                     order_path,
-                    files_in_irods,
+                    files_in_order,
                     restricted=True,
-                    index=None,
+                    index=index,
                 )
                 if info is not None:
                     response.append(info)
-            # When found one split, looking for more:
-            else:
-                response.append(info)
-                for index in range(2, 100):
-                    info = self.get_download(
-                        imain,
-                        order_id,
-                        order_path,
-                        files_in_irods,
-                        restricted=True,
-                        index=index,
-                    )
-                    if info is not None:
-                        response.append(info)
 
-            if len(response) == 0:
-                raise NotFound(f"Order '{order_id}' not found (or no permissions)")
+        if len(response) == 0:
+            raise NotFound(f"Order '{order_id}' not found (or no permissions)")
 
-            msg = prepare_message(self, log_string="end", status="enabled")
-            log_into_queue(self, msg)
+        msg = prepare_message(self, log_string="end", status="enabled")
+        log_into_queue(self, msg)
 
-            return self.response(response)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
-        except NetworkException as e:  # pragma: no cover
-            log.error(e)
-            raise ServiceUnavailable("Could not connect to B2SAFE host")
+        return self.response(response)
 
     @decorators.auth.require()
     @decorators.use_kwargs(EndpointsInputSchema)
@@ -500,18 +411,12 @@ class BasketEndpoint(SeaDataEndpoint):
     )
     def delete(self, user: User, **json_input: Any) -> Response:
 
-        try:
-            imain = irods.get_instance()
-            order_path = self.get_irods_path(imain, ORDERS_COLL)
-            local_order_path = MOUNTPOINT.joinpath(ORDERS_DIR)
-            log.debug("Order collection: {}", order_path)
-            log.debug("Order path: {}", local_order_path)
+        local_order_path = MOUNTPOINT.joinpath(ORDERS_DIR)
+        log.debug("Order path: {}", local_order_path)
 
-            c = celery.get_instance()
-            task = c.celery_app.send_task(
-                "delete_orders", args=[order_path, str(local_order_path), json_input]
-            )
-            log.info("Async job: {}", task.id)
-            return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        c = celery.get_instance()
+        task = c.celery_app.send_task(
+            "delete_orders", args=[str(local_order_path), json_input]
+        )
+        log.info("Async job: {}", task.id)
+        return self.return_async_id(task.id)

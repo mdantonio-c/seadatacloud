@@ -75,6 +75,7 @@ def delete_batches(
                         "errors": len(errors),
                     },
                 )
+                continue
 
         if len(errors) > 0:
             myjson["errors"] = errors

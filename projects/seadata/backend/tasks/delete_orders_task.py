@@ -16,7 +16,6 @@ TIMEOUT = 1800
 @CeleryExt.task(idempotent=False)
 def delete_orders(
     self: Task[[str, str, Dict[str, Any]], str],
-    orders_path: str,
     local_orders_path: str,
     myjson: Dict[str, Any],
 ) -> str:
@@ -47,75 +46,50 @@ def delete_orders(
         return notify_error(ErrorCodes.EMPTY_ORDERS_PARAMETER, myjson, backdoor, self)
 
     try:
-        with irods.get_instance() as imain:
+        errors: List[Dict[str, str]] = []
+        counter = 0
+        for order in orders:
 
-            errors: List[Dict[str, str]] = []
-            counter = 0
-            for order in orders:
+            counter += 1
+            self.update_state(
+                state="PROGRESS",
+                meta={"total": total, "step": counter, "errors": len(errors)},
+            )
 
-                counter += 1
-                self.update_state(
-                    state="PROGRESS",
-                    meta={"total": total, "step": counter, "errors": len(errors)},
+            local_order_path = Path(local_orders_path, order)
+            log.info("Delete request for order path: {}", local_order_path)
+
+            ##################
+            # TODO: remove the iticket?
+
+            # TODO: I should also revoke the task?
+
+            if local_order_path.is_dir():
+                rmtree(local_order_path, ignore_errors=True)
+            else:
+                errors.append(
+                    {
+                        "error": ErrorCodes.ORDER_NOT_FOUND[0],
+                        "description": ErrorCodes.ORDER_NOT_FOUND[1],
+                        "subject": order,
+                    }
                 )
 
-                order_path = Path(orders_path, order)
-                local_order_path = Path(local_orders_path, order)
-                log.info("Delete request for order collection: {}", order_path)
-                log.info("Delete request for order path: {}", local_order_path)
+                self.update_state(
+                    state="PROGRESS",
+                    meta={
+                        "total": total,
+                        "step": counter,
+                        "errors": len(errors),
+                    },
+                )
+                continue
 
-                try:
-                    start_timeout(TIMEOUT)
-                    if not imain.is_collection(order_path):
-                        errors.append(
-                            {
-                                "error": ErrorCodes.ORDER_NOT_FOUND[0],
-                                "description": ErrorCodes.ORDER_NOT_FOUND[1],
-                                "subject": order,
-                            }
-                        )
-
-                        self.update_state(
-                            state="PROGRESS",
-                            meta={
-                                "total": total,
-                                "step": counter,
-                                "errors": len(errors),
-                            },
-                        )
-                        stop_timeout()
-                        continue
-
-                    ##################
-                    # TODO: remove the iticket?
-
-                    # TODO: I should also revoke the task?
-
-                    imain.remove(order_path, recursive=True)
-                    stop_timeout()
-                except BaseException as e:
-                    log.error(e)
-                    errors.append(
-                        {
-                            "error": ErrorCodes.UNEXPECTED_ERROR[0],
-                            "description": ErrorCodes.UNEXPECTED_ERROR[1],
-                            "subject": order,
-                        }
-                    )
-                    self.update_state(
-                        state="PROGRESS",
-                        meta={"total": total, "step": counter, "errors": len(errors)},
-                    )
-                    continue
-
-                if local_order_path.is_dir():
-                    rmtree(local_order_path, ignore_errors=True)
-
-            if len(errors) > 0:
-                myjson["errors"] = errors
-            ret = ext_api.post(myjson, backdoor=backdoor)
-            log.info("CDI IM CALL = {}", ret)
-            return "COMPLETED"
+        if len(errors) > 0:
+            myjson["errors"] = errors
+        ret = ext_api.post(myjson, backdoor=backdoor)
+        log.info("CDI IM CALL = {}", ret)
+        return "COMPLETED"
     except BaseException as e:
         log.error(e)
         log.error(type(e))

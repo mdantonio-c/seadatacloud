@@ -1,16 +1,19 @@
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import pytz
 import requests
-from restapi.config import PRODUCTION
+from cryptography.fernet import Fernet
+from restapi.config import APP_SECRETS, PRODUCTION, get_backend_url
 from restapi.connectors import sqlalchemy
 from restapi.env import Env
-from restapi.exceptions import RestApiException
+from restapi.exceptions import BadRequest, RestApiException
 from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
+from restapi.services.authentication import import_secret
 from restapi.utilities.logs import log
 from seadata.connectors import irods
 from webargs import fields as webargs_fields
@@ -289,6 +292,125 @@ class SeaDataEndpoint(EndpointResource):
         self.auth.save_token(user, token, full_payload)
 
         return token
+
+    def get_seed_path(self, abs_order_path: Path) -> Path:
+        return abs_order_path.joinpath(".seed")
+
+    def get_seed(self, abs_order_path: Path) -> str:
+        return import_secret(self.get_seed_path(abs_order_path))[0:12].decode()
+
+    def get_secret(self) -> bytes:
+        return import_secret(APP_SECRETS.joinpath("order_secrets.key"))
+
+    def get_token(self, abs_order_path: Path, relative_zip_path: str) -> str:
+
+        secret = self.get_secret()
+        fernet = Fernet(secret)
+
+        seed = self.get_seed(abs_order_path)
+        plain = f"{seed}:{relative_zip_path}"
+        return fernet.encrypt(plain.encode()).decode()
+
+    def read_token(self, cypher: str) -> str:
+        secret = self.get_secret()
+        fernet = Fernet(secret)
+
+        # This is seed:order_id/filefile
+        plain = fernet.decrypt(cypher.encode()).decode().split(":")
+
+        # This is seed
+        seed = plain[0]
+
+        # This is order_id/filefile
+        zip_filepath = Path(plain[1])
+        order_id = zip_filepath.parent.name
+
+        abs_zip_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+
+        expected_seed = self.get_seed(abs_zip_path)
+
+        if seed != expected_seed:
+            raise BadRequest("Invalid token seed")
+
+        return str(zip_filepath)
+
+    def get_download(
+        self,
+        order_id: str,
+        order_path: Path,
+        files: Dict[str, Dict[str, Any]],
+        restricted: bool = False,
+        index: Optional[int] = None,
+        get_only_url: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+
+        zip_file_name = self.get_order_zip_file_name(order_id, restricted, index)
+
+        if zip_file_name not in files:
+            return None
+
+        zip_path = str(order_path.joinpath(zip_file_name))
+        log.debug("Zip path: {}", zip_path)
+
+        seed_path = self.get_seed_path(order_path)
+        if seed_path.exists() and not get_only_url:
+            log.info("Invalidating previous download URLs")
+            seed_path.unlink()
+
+        # This is not a path, this s the string that will be encoded in the token
+        relative_path = os.path.join(order_id, zip_file_name)
+        token = self.get_token(order_path, relative_path)
+
+        ftype = ""
+        if restricted:
+            ftype += "1"
+        else:
+            ftype += "0"
+        if index is None:
+            ftype += "0"
+        else:
+            ftype += str(index)
+
+        host = get_backend_url()
+
+        # too many work for THEM to skip the add of the protocol
+        # they prefer to get back an incomplete url
+        host = host.replace("https://", "").replace("http://", "")
+
+        url = f"{host}/api/orders/{order_id}/download/{ftype}/c/{token}"
+
+        if get_only_url:
+            # return only the url
+            return {"url": url}
+
+        ##################
+        # TODO check if saving the metadata is still needed
+        # # Set the url as Metadata in the irods file
+        # imain.set_metadata(zip_ipath, download=url)
+        #
+        # # TOFIX: we should add a database or cache to save this,
+        # # not irods metadata (known for low performances)
+        # imain.set_metadata(zip_ipath, iticket_code=code)
+
+        info = files[zip_file_name]
+
+        return {
+            "name": zip_file_name,
+            "url": url,
+            "size": info.get("content_length", 0),
+        }
+
+    def get_order_zip_file_name(
+        self, order_id: str, restricted: bool = False, index: Optional[int] = None
+    ) -> str:
+
+        label = "restricted" if restricted else "unrestricted"
+        if index is None:
+            zip_file_name = f"order_{order_id}_{label}.zip"
+        else:
+            zip_file_name = f"order_{order_id}_{label}{index}.zip"
+
+        return zip_file_name
 
     def response(  # type: ignore
         self,

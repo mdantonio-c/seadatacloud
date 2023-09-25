@@ -2,26 +2,17 @@ import logging
 import os
 import re
 from pathlib import Path
-from shutil import make_archive, rmtree
+from shutil import copy, make_archive, rmtree
 from typing import Any, Dict, List
 
 from plumbum import local  # type: ignore
 from plumbum.commands.processes import ProcessExecutionError  # type: ignore
-from restapi.connectors import redis
+from restapi.connectors import redis, sqlalchemy
 from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
-from restapi.utilities.processes import start_timeout, stop_timeout
-from seadata.connectors import irods
-from seadata.connectors.b2handle import PIDgenerator, b2handle
 from seadata.connectors.rabbit_queue import prepare_message
 from seadata.endpoints import MOUNTPOINT, ORDERS_DIR, ErrorCodes
 from seadata.tasks.seadata import MAX_ZIP_SIZE, ext_api, notify_error
-
-TIMEOUT = 1800
-
-logging.getLogger("b2handle").setLevel(logging.WARNING)
-b2handle_client = b2handle.instantiate_for_read_access()
-pmaker = PIDgenerator()
 
 
 @CeleryExt.task(idempotent=False)
@@ -46,33 +37,77 @@ def unrestricted_order(
 
     ##################
     # SETUP
-    local_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
-    local_zip_dir = local_dir.joinpath("tobezipped")
+    order_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+    local_zip_dir = order_dir.joinpath("tobezipped")
     local_zip_dir.mkdir(parents=True, exist_ok=True)
 
     r = redis.get_instance().r
     try:
-        with irods.get_instance() as imain:
+        log.info("Retrieving paths for {} PIDs", len(pids))
+        db = sqlalchemy.get_instance()
+        ##################
+        # Verify pids
+        files: Dict[str, Path] = {}
+        errors: List[Dict[str, str]] = []
+        counter = 0
+        verified = 0
+        for pid in pids:
 
-            log.info("Retrieving paths for {} PIDs", len(pids))
-            ##################
-            # Verify pids
-            files: Dict[str, Path] = {}
-            errors: List[Dict[str, str]] = []
-            counter = 0
-            verified = 0
-            for pid in pids:
+            ################
+            # avoid empty pids?
+            if "/" not in pid or len(pid) < 10:
+                continue
 
-                ################
-                # avoid empty pids?
-                if "/" not in pid or len(pid) < 10:
-                    continue
+            ################
+            # Check the cache first
+            file_path = r.get(pid)
+            if file_path is not None:
+                files[pid] = Path(file_path.decode())
+                verified += 1
+                self.update_state(
+                    state="PROGRESS",
+                    meta={
+                        "total": total,
+                        "step": counter,
+                        "verified": verified,
+                        "errors": len(errors),
+                    },
+                )
+                continue
 
-                ################
-                # Check the cache first
-                ifile = r.get(pid)
-                if ifile is not None:
-                    files[pid] = Path(ifile.decode())
+            # otherwise check the local database
+            dataobject = db.DataObject
+            dataobject_entry = dataobject.query.filter(dataobject.uid == pid).first()
+
+            if not dataobject_entry:
+                errors.append(
+                    {
+                        "error": ErrorCodes.PID_NOT_FOUND[0],
+                        "description": ErrorCodes.PID_NOT_FOUND[1],
+                        "subject": pid,
+                    }
+                )
+                self.update_state(
+                    state="PROGRESS",
+                    meta={"total": total, "step": counter, "errors": len(errors)},
+                )
+
+                log.warning("PID not found: {}", pid)
+            else:
+                pid_path = Path(dataobject_entry.path)
+
+                if not pid_path:
+                    log.error(
+                        "Can't extract a path from the following record: ID: {}, PID: {}",
+                        dataobject_entry.id,
+                        dataobject_entry.uid,
+                    )
+                else:
+                    log.debug("PID verified: {}\n({})", pid, pid_path)
+                    files[pid] = pid_path
+                    r.set(pid, str(pid_path))
+                    r.set(str(pid_path), pid)
+
                     verified += 1
                     self.update_state(
                         state="PROGRESS",
@@ -83,279 +118,205 @@ def unrestricted_order(
                             "errors": len(errors),
                         },
                     )
-                    continue
+        log.info("Retrieved paths for {} PIDs", len(files))
 
-                # otherwise b2handle remotely
+        # Recover files
+        for pid, path in files.items():
+
+            # Copy files from production into a local TMPDIR
+            filename = path.name
+            local_file = local_zip_dir.joinpath(filename)
+
+            if not local_file.exists() or local_file.stat().st_size == 0:
                 try:
-                    b2handle_output = b2handle_client.retrieve_handle_record(pid)
-                except BaseException:
-                    self.update_state(
-                        state="FAILED",
-                        meta={
-                            "total": total,
-                            "step": counter,
-                            "verified": verified,
-                            "errors": len(errors),
-                        },
-                    )
-                    return notify_error(
-                        ErrorCodes.B2HANDLE_ERROR, myjson, backdoor, self
-                    )
-
-                if b2handle_output is None:
+                    copy(path, local_file)
+                except BaseException as e:
+                    log.error(e)
                     errors.append(
                         {
-                            "error": ErrorCodes.PID_NOT_FOUND[0],
-                            "description": ErrorCodes.PID_NOT_FOUND[1],
+                            "error": ErrorCodes.UNABLE_TO_DOWNLOAD_FILE[0],
+                            "description": ErrorCodes.UNABLE_TO_DOWNLOAD_FILE[1],
+                            "subject_alt": filename,
                             "subject": pid,
                         }
                     )
                     self.update_state(
                         state="PROGRESS",
-                        meta={"total": total, "step": counter, "errors": len(errors)},
-                    )
-
-                    log.warning("PID not found: {}", pid)
-                else:
-                    pid_path = pmaker.parse_pid_dataobject_path(b2handle_output)
-
-                    if not pid_path:
-                        log.error("Can't extract a PID from {}", b2handle_output)
-                    else:
-                        log.debug("PID verified: {}\n({})", pid, pid_path)
-                        files[pid] = pid_path
-                        r.set(pid, str(pid_path))
-                        r.set(str(pid_path), pid)
-
-                        verified += 1
-                        self.update_state(
-                            state="PROGRESS",
-                            meta={
-                                "total": total,
-                                "step": counter,
-                                "verified": verified,
-                                "errors": len(errors),
-                            },
-                        )
-            log.info("Retrieved paths for {} PIDs", len(files))
-
-            # Recover files
-            for pid, ipath in files.items():
-
-                # Copy files from irods into a local TMPDIR
-                filename = ipath.name
-                local_file = local_zip_dir.joinpath(filename)
-
-                if not local_file.exists() or local_file.stat().st_size == 0:
-                    try:
-                        start_timeout(TIMEOUT)
-                        with imain.get_dataobject(ipath).open("r") as source:
-                            with open(local_file, "wb") as target:
-                                chunk_size = 10485760
-                                while True:
-                                    data = source.read(chunk_size)
-                                    if not data:
-                                        break
-                                    target.write(data)
-                        stop_timeout()
-                    except BaseException as e:
-                        log.error(e)
-                        errors.append(
-                            {
-                                "error": ErrorCodes.UNABLE_TO_DOWNLOAD_FILE[0],
-                                "description": ErrorCodes.UNABLE_TO_DOWNLOAD_FILE[1],
-                                "subject_alt": filename,
-                                "subject": pid,
-                            }
-                        )
-                        self.update_state(
-                            state="PROGRESS",
-                            meta={
-                                "total": total,
-                                "step": counter,
-                                "errors": len(errors),
-                            },
-                        )
-                        continue
-
-                    # log.debug("Copy to local: {}", local_file)
-                #########################
-                #########################
-
-                counter += 1
-                if counter % 1000 == 0:
-                    self.update_state(
-                        state="PROGRESS",
                         meta={
                             "total": total,
                             "step": counter,
-                            "verified": verified,
                             "errors": len(errors),
                         },
                     )
-                    log.info("{} pids already processed", counter)
-                # # Set current file to the metadata collection
-                # if pid not in metadata:
-                #     md = {pid: ipath}
-                #     imain.set_metadata(order_path, **md)
-                #     log.debug("Set metadata")
+                    continue
 
-            zip_ipath = None
-            if counter > 0:
-                ##################
-                # Zip the dir
-                zip_local_file = local_dir.joinpath(zip_file_name)
-                log.debug("Zip local path: {}", zip_local_file)
-                if not zip_local_file.exists() or zip_local_file.stat().st_size == 0:
-                    make_archive(
-                        base_name=str(
-                            zip_local_file.parent.joinpath(zip_local_file.stem)
-                        ),
-                        format="zip",
-                        root_dir=local_zip_dir,
-                    )
+                # log.debug("Copy to local: {}", local_file)
+            #########################
+            #########################
 
-                    log.info("Compressed in: {}", zip_local_file)
+            counter += 1
+            if counter % 1000 == 0:
+                self.update_state(
+                    state="PROGRESS",
+                    meta={
+                        "total": total,
+                        "step": counter,
+                        "verified": verified,
+                        "errors": len(errors),
+                    },
+                )
+                log.info("{} pids already processed", counter)
+            # # Set current file to the metadata collection
+            # if pid not in metadata:
+            #     md = {pid: ipath}
+            #     imain.set_metadata(order_path, **md)
+            #     log.debug("Set metadata")
 
-                ##################
-                # Copy the zip into irods
-                zip_ipath = Path(order_path, zip_file_name)
-                # NOTE: always overwrite
+        if counter > 0:
+            ##################
+            # Zip the dir
+            zip_path = order_dir.joinpath(zip_file_name)
+            log.debug("Zip path: {}", zip_path)
+            if not zip_path.exists() or zip_path.stat().st_size == 0:
+                make_archive(
+                    base_name=str(zip_path.parent.joinpath(zip_path.stem)),
+                    format="zip",
+                    root_dir=local_zip_dir,
+                )
+
+                log.info("Compressed in: {}", zip_path)
+
+            ##################
+
+            if os.path.getsize(str(zip_path)) > MAX_ZIP_SIZE:
+                log.warning("Zip too large, splitting {}", zip_path)
+
+                # Create a sub folder for split files. If already exists,
+                # remove it before to start from a clean environment
+                split_path = order_dir.joinpath("unrestricted_zip_split")
+                rmtree(str(split_path), ignore_errors=True)
+                split_path.mkdir()
+
+                # Execute the split of the whole zip
+                split_params = [
+                    "-n",
+                    MAX_ZIP_SIZE,
+                    "-b",
+                    str(split_path),
+                    zip_path,
+                ]
                 try:
-                    start_timeout(TIMEOUT)
-                    imain.put(str(zip_local_file), str(zip_ipath))
-                    log.info("Copied zip to irods: {}", zip_ipath)
-                    stop_timeout()
-                except BaseException as e:
-                    log.error(e)
-                    return notify_error(
-                        ErrorCodes.UNEXPECTED_ERROR, myjson, backdoor, self
-                    )
+                    zipsplit = local["/usr/bin/zipsplit"]
+                    zipsplit(split_params)
+                except ProcessExecutionError as e:
 
-                if os.path.getsize(str(zip_local_file)) > MAX_ZIP_SIZE:
-                    log.warning("Zip too large, splitting {}", zip_local_file)
-
-                    # Create a sub folder for split files. If already exists,
-                    # remove it before to start from a clean environment
-                    split_path = local_dir.joinpath("unrestricted_zip_split")
-                    rmtree(str(split_path), ignore_errors=True)
-                    split_path.mkdir()
-
-                    # Execute the split of the whole zip
-                    split_params = [
-                        "-n",
-                        MAX_ZIP_SIZE,
-                        "-b",
-                        str(split_path),
-                        zip_local_file,
-                    ]
-                    try:
-                        zipsplit = local["/usr/bin/zipsplit"]
-                        zipsplit(split_params)
-                    except ProcessExecutionError as e:
-
-                        if "Entry is larger than max split size" in e.stdout:
-                            reg = r"Entry too big to split, read, or write \((.*)\)"
-                            extra = None
-                            m = re.search(reg, e.stdout)
-                            if m:
-                                extra = m.group(1)
-                            return notify_error(
-                                ErrorCodes.ZIP_SPLIT_ENTRY_TOO_LARGE,
-                                myjson,
-                                backdoor,
-                                self,
-                                extra=extra,
-                            )
-                        else:
-                            log.error(e.stdout)
-
+                    if "Entry is larger than max split size" in e.stdout:
+                        reg = r"Entry too big to split, read, or write \((.*)\)"
+                        extra = None
+                        m = re.search(reg, e.stdout)
+                        if m:
+                            extra = m.group(1)
                         return notify_error(
-                            ErrorCodes.ZIP_SPLIT_ERROR,
+                            ErrorCodes.ZIP_SPLIT_ENTRY_TOO_LARGE,
                             myjson,
                             backdoor,
                             self,
-                            extra=str(zip_local_file),
+                            extra=extra,
+                        )
+                    else:
+                        log.error(e.stdout)
+
+                    return notify_error(
+                        ErrorCodes.ZIP_SPLIT_ERROR,
+                        myjson,
+                        backdoor,
+                        self,
+                        extra=str(zip_path),
+                    )
+
+                regexp = "^.*[^0-9]([0-9]+).zip$"
+                zip_files = os.listdir(split_path)
+                base_filename, _ = os.path.splitext(zip_file_name)
+                for subzip_file in zip_files:
+                    m = re.search(regexp, subzip_file)
+                    if not m:
+                        log.error(
+                            "Cannot extract index from zip name: {}",
+                            subzip_file,
+                        )
+                        return notify_error(
+                            ErrorCodes.INVALID_ZIP_SPLIT_OUTPUT,
+                            myjson,
+                            backdoor,
+                            self,
+                            extra=str(zip_path),
+                        )
+                    index = m.group(1).lstrip("0")
+                    subzip_path = split_path.joinpath(subzip_file)
+
+                    subzip_order_file = f"{base_filename}{index}.zip"
+                    subzip_order_path = Path(order_path, subzip_order_file)
+
+                    # TODO: the unzipped file has to be maintained anyway?
+                    # log.info("Delete the not zipped path at {}",zip_path)
+                    # zip_path.unlink()
+                    log.info("Copying {} -> {}", subzip_path, subzip_order_path)
+                    try:
+                        copy(subzip_path, subzip_order_path)
+                    except BaseException as e:
+                        log.error(e)
+                        return notify_error(
+                            ErrorCodes.UNEXPECTED_ERROR,
+                            myjson,
+                            backdoor,
+                            self,
+                            extra=str(subzip_path),
                         )
 
-                    regexp = "^.*[^0-9]([0-9]+).zip$"
-                    zip_files = os.listdir(split_path)
-                    base_filename, _ = os.path.splitext(zip_file_name)
-                    for subzip_file in zip_files:
-                        m = re.search(regexp, subzip_file)
-                        if not m:
-                            log.error(
-                                "Cannot extract index from zip name: {}",
-                                subzip_file,
-                            )
-                            return notify_error(
-                                ErrorCodes.INVALID_ZIP_SPLIT_OUTPUT,
-                                myjson,
-                                backdoor,
-                                self,
-                                extra=str(zip_local_file),
-                            )
-                        index = m.group(1).lstrip("0")
-                        subzip_path = split_path.joinpath(subzip_file)
+                # to save space, delete the folder where splitted files were stored
+                rmtree(str(split_path), ignore_errors=True)
 
-                        subzip_ifile = f"{base_filename}{index}.zip"
-                        subzip_ipath = Path(order_path, subzip_ifile)
+        # to save space delete the folder when temp files were stored
+        log.info(
+            "Deleting the temp dir where unzipped data are stored: Path '{}'",
+            local_zip_dir,
+        )
+        rmtree(str(local_zip_dir), ignore_errors=True)
 
-                        log.info("Uploading {} -> {}", subzip_path, subzip_ipath)
-                        try:
-                            start_timeout(TIMEOUT)
-                            imain.put(str(subzip_path), str(subzip_ipath))
-                            stop_timeout()
-                        except BaseException as e:
-                            log.error(e)
-                            return notify_error(
-                                ErrorCodes.UNEXPECTED_ERROR,
-                                myjson,
-                                backdoor,
-                                self,
-                                extra=str(subzip_path),
-                            )
+        # CDI notification
+        reqkey = "request_id"
+        msg = prepare_message(self, get_json=True)
+        zipcount = 0
+        if counter > 0:
+            # FIXME: what about when restricted is there?
+            zipcount += 1
+        myjson["parameters"] = {
+            # "request_id": msg['request_id'],
+            reqkey: myjson[reqkey],
+            "order_number": order_id,
+            "zipfile_name": params["file_name"],
+            "file_count": counter,
+            "zipfile_count": zipcount,
+        }
+        for key, value in msg.items():
+            if key == reqkey:
+                continue
+            myjson[key] = value
+        if len(errors) > 0:
+            myjson["errors"] = errors
+        myjson[reqkey] = self.request.id
+        ret = ext_api.post(myjson, backdoor=backdoor)
+        log.info("CDI IM CALL = {}", ret)
 
-            #########################
-            # NOTE: should I close the iRODS session ?
-            #########################
-            # imain.prc
-
-            ##################
-            # CDI notification
-            reqkey = "request_id"
-            msg = prepare_message(self, get_json=True)
-            zipcount = 0
-            if counter > 0:
-                # FIXME: what about when restricted is there?
-                zipcount += 1
-            myjson["parameters"] = {
-                # "request_id": msg['request_id'],
-                reqkey: myjson[reqkey],
-                "order_number": order_id,
-                "zipfile_name": params["file_name"],
-                "file_count": counter,
-                "zipfile_count": zipcount,
-            }
-            for key, value in msg.items():
-                if key == reqkey:
-                    continue
-                myjson[key] = value
-            if len(errors) > 0:
-                myjson["errors"] = errors
-            myjson[reqkey] = self.request.id
-            ret = ext_api.post(myjson, backdoor=backdoor)
-            log.info("CDI IM CALL = {}", ret)
-
-            ##################
-            out = {
-                "total": total,
-                "step": counter,
-                "verified": verified,
-                "errors": len(errors),
-                "zip": str(zip_ipath),
-            }
-            self.update_state(state="COMPLETED", meta=out)
+        ##################
+        out = {
+            "total": total,
+            "step": counter,
+            "verified": verified,
+            "errors": len(errors),
+            "zip": str(zip_path),
+        }
+        self.update_state(state="COMPLETED", meta=out)
 
     except BaseException as e:
         log.error(e)
