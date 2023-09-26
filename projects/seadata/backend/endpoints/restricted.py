@@ -9,7 +9,13 @@ from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import ORDERS_COLL, EndpointsInputSchema, SeaDataEndpoint
+from seadata.endpoints import (
+    MOUNTPOINT,
+    ORDERS_COLL,
+    ORDERS_DIR,
+    EndpointsInputSchema,
+    SeaDataEndpoint,
+)
 
 
 class Restricted(SeaDataEndpoint, Uploader):
@@ -26,21 +32,17 @@ class Restricted(SeaDataEndpoint, Uploader):
     )
     def post(self, order_id: str, user: User, **json_input: Any) -> Response:
 
-        try:
-            imain = irods.get_instance()
-            order_path = self.get_irods_path(imain, ORDERS_COLL, order_id)
-            if not imain.is_collection(order_path):
-                # Create the path and set permissions
-                imain.create_collection_inheritable(order_path, user.email)
+        order_path = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
+        if not order_path.exists():
+            # Create the path and set permissions
+            order_path.mkdir(parents=True)
 
-            c = celery.get_instance()
-            task = c.celery_app.send_task(
-                "download_restricted_order",
-                args=[order_id, order_path, json_input],
-                queue="restricted",
-                routing_key="restricted",
-            )
-            log.info("Async job: {}", task.id)
-            return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        c = celery.get_instance()
+        task = c.celery_app.send_task(
+            "download_restricted_order",
+            args=[order_id, str(order_path), json_input],
+            queue="restricted",
+            routing_key="restricted",
+        )
+        log.info("Async job: {}", task.id)
+        return self.return_async_id(task.id)

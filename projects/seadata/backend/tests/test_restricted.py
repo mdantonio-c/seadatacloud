@@ -1,4 +1,6 @@
 import time
+from datetime import datetime
+from pathlib import Path
 
 from faker import Faker
 from restapi.env import Env
@@ -25,7 +27,7 @@ class TestApp(SeadataTests):
         r = client.delete(f"{API_URI}/restricted/my_order_id")
         assert r.status_code == 405
 
-        headers = self.login(client)
+        headers, _ = self.do_login(client, None, None)
 
         order_id = faker.pystr()
         # POST - send an empty request
@@ -115,15 +117,46 @@ class TestApp(SeadataTests):
         assert "name" in content[0]
         assert "path" in content[0]
         assert "object_type" in content[0]
-        assert "owner" in content[0]
+        # assert "owner" in content[0]
         assert "content_length" in content[0]
         assert "created" in content[0]
         assert "last_modified" in content[0]
         assert "URL" in content[0]
         assert content[0]["name"] == f"order_{order_id}_restricted.zip"
-        assert content[0]["path"] == f"/tempZone/orders/{order_id}"
-        assert content[0]["owner"] == Env.get("IRODS_USER", "")
+        assert (
+            content[0]["path"]
+            == f"{Env.get('SEADATA_RESOURCES_MOUNTPOINT', '')}/{Env.get('SEADATA_WORKSPACE_ORDERS', '')}/{order_id}"
+        )
+        # assert content[0]["owner"] == Env.get("IRODS_USER", "")
         assert content[0]["object_type"] == "dataobject"
         assert content[0]["content_length"] > int(file_size)
         # should be updated in case of download request
         assert content[0]["URL"] is None
+
+        # DELETE order
+        t = datetime.today()
+        now = t.strftime("%Y%m%dT%H:%M:%S")
+        params = {
+            "request_id": order_id,
+            "edmo_code": 634,
+            "datetime": now,
+            "version": "1",
+            "api_function": "delete_orders",
+            "test_mode": "true",
+            "parameters": {"orders": [order_id], "backdoor": True},
+        }
+
+        r = client.delete(f"{API_URI}/orders", headers=headers, json=params)
+        assert r.status_code == 200
+
+        # wait the task to be completed
+        time.sleep(20)
+
+        order_path = Path(
+            Env.get("SEADATA_RESOURCES_MOUNTPOINT", ""),
+            Env.get("SEADATA_WORKSPACE_ORDERS", ""),
+            order_id,
+        )
+        assert order_path.parent.exists() and order_path.parent.is_dir()
+        # check the folder has been deleted
+        assert not order_path.exists()

@@ -199,7 +199,7 @@ class BasketEndpoint(SeaDataEndpoint):
                 # check if there is a seed file. If not it means that no urls are available for that file
                 seed_file = Path(path, ".seed")
                 if not seed_file.exists():
-                    data["URL"] = ""
+                    data["URL"] = None
                 else:
                     # NOTE with irods the code was a metadata of the file. This part replace that function
                     # NOTE that the tickets are different every time they are generated, but they are based on the same seed. If the ticket has always to be the same, this approach has to be changed and it has to be saved in the local db
