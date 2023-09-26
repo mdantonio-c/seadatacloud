@@ -37,7 +37,7 @@ class TestApp(SeadataTests):
         r = client.delete(f"{API_URI}/pidcache/my_batch")
         assert r.status_code == 405
 
-        headers = self.login(client)
+        headers, _ = self.do_login(client, None, None)
 
         r = client.get(f"{API_URI}/pidcache", headers=headers)
         assert r.status_code == 200

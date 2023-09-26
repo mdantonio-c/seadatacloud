@@ -6,7 +6,12 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
 from seadata.connectors import irods
-from seadata.endpoints import PRODUCTION_COLL, SeaDataEndpoint
+from seadata.endpoints import (
+    MOUNTPOINT,
+    PRODUCTION_COLL,
+    PRODUCTION_DIR,
+    SeaDataEndpoint,
+)
 
 
 class PidCache(SeaDataEndpoint):
@@ -34,17 +39,13 @@ class PidCache(SeaDataEndpoint):
     )
     def post(self, batch_id: str, user: User) -> Response:
 
-        try:
-            imain = irods.get_instance()
-            collection = self.get_irods_path(imain, PRODUCTION_COLL, batch_id)
+        collection = MOUNTPOINT.joinpath(PRODUCTION_DIR, batch_id)
 
-            if not imain.exists(collection):
-                raise NotFound(f"Invalid batch id {batch_id}")
+        if not collection.is_dir():
+            raise NotFound(f"Invalid batch id {batch_id}")
 
-            c = celery.get_instance()
-            task = c.celery_app.send_task("cache_batch_pids", args=[collection])
-            log.info("Async job: {}", task.id)
+        c = celery.get_instance()
+        task = c.celery_app.send_task("cache_batch_pids", args=[str(collection)])
+        log.info("Async job: {}", task.id)
 
-            return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        return self.return_async_id(task.id)

@@ -23,7 +23,10 @@ if True:
         message="the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses",
     )
 
+from pathlib import Path
+
 from restapi import decorators
+from restapi.connectors import sqlalchemy
 from restapi.exceptions import BadRequest, NotFound
 from restapi.models import fields
 from restapi.rest.definition import Response
@@ -54,30 +57,30 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
     def get(self, pid: str, user: User, download: bool = False) -> Response:
         """Get metadata or file from pid"""
 
-        pmaker = PIDgenerator()
+        db = sqlalchemy.get_instance()
+        # get the entry from the database
+        dataobject = db.DataObject
+        dataobject_entry = dataobject.query.filter(dataobject.uid == pid).first()
 
-        b2handle_output = pmaker.check_pid_content(pid)
-        if b2handle_output is None:
+        if not dataobject_entry:
             raise BadRequest(f"PID {pid} not found")
 
         log.debug("PID {} verified", pid)
-        ipath = pmaker.parse_pid_dataobject_path(b2handle_output)
+        path = Path(dataobject_entry.path)
 
-        if not ipath:
+        if not path:
             raise NotFound(f"Object referenced by {pid} cannot be found")
 
         response = {
             "PID": pid,
             "verified": True,
             "metadata": {},
-            "temp_id": ipath.name,
-            "batch_id": ipath.parent.name,
+            "temp_id": path.name,
+            "batch_id": path.parent.name,
         }
 
-        imain = irods.get_instance()
-        metadata = imain.get_metadata(str(ipath))
-
-        for key, value in metadata.items():
+        # get the metadata
+        for key, value in dataobject_entry.object_metadata.items():
             if key in Metadata.keys:
                 response["metadata"][key] = value  # type: ignore
 
