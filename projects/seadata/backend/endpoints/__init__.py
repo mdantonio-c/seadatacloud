@@ -164,8 +164,8 @@ class SeaDataEndpoint(EndpointResource):
             prefix = DEFAULT_IMAGE_PREFIX
         return f"{prefix}/{qc_name}"
 
+    @staticmethod
     def list(
-        self,
         path: Optional[Path] = None,
         recursive: bool = False,
         detailed: bool = False,
@@ -189,7 +189,7 @@ class SeaDataEndpoint(EndpointResource):
                 row["name"] = el.name
                 row["objects"] = {}
                 if recursive:
-                    row["objects"] = self.list(
+                    row["objects"] = SeaDataEndpoint.list(
                         path=el,
                         recursive=recursive,
                         detailed=detailed,

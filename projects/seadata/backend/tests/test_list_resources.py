@@ -21,7 +21,7 @@ class TestApp(SeadataTests):
         r = client.delete(f"{API_URI}/resourceslist")
         assert r.status_code == 405
 
-        headers = self.login(client)
+        headers, _ = self.do_login(client, None, None)
 
         r = client.post(f"{API_URI}/resourceslist", headers=headers, json={})
         assert r.status_code == 400

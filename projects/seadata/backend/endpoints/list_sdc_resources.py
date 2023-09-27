@@ -10,7 +10,10 @@ from restapi.utilities.logs import log
 from seadata.connectors import irods
 from seadata.endpoints import (
     INGESTION_COLL,
+    INGESTION_DIR,
+    MOUNTPOINT,
     ORDERS_COLL,
+    ORDERS_DIR,
     EndpointsInputSchema,
     SeaDataEndpoint,
 )
@@ -29,18 +32,17 @@ class ListResources(SeaDataEndpoint):
     )
     def post(self, user: User, **json_input: Any) -> Response:
 
-        try:
-            imain = irods.get_instance()
-            c = celery.get_instance()
-            task = c.celery_app.send_task(
-                "list_resources",
-                args=[
-                    self.get_irods_path(imain, INGESTION_COLL),
-                    self.get_irods_path(imain, ORDERS_COLL),
-                    json_input,
-                ],
-            )
-            log.info("Async job: {}", task.id)
-            return self.return_async_id(task.id)
-        except requests.exceptions.ReadTimeout:  # pragma: no cover
-            raise ServiceUnavailable("B2SAFE is temporarily unavailable")
+        ingestion_dir = MOUNTPOINT.joinpath(INGESTION_DIR)
+        orders_dir = MOUNTPOINT.joinpath(ORDERS_DIR)
+
+        c = celery.get_instance()
+        task = c.celery_app.send_task(
+            "list_resources",
+            args=[
+                str(ingestion_dir),
+                str(orders_dir),
+                json_input,
+            ],
+        )
+        log.info("Async job: {}", task.id)
+        return self.return_async_id(task.id)
