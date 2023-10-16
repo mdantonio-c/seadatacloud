@@ -352,10 +352,12 @@ class SeaDataEndpoint(EndpointResource):
         zip_path = str(order_path.joinpath(zip_file_name))
         log.debug("Zip path: {}", zip_path)
 
-        seed_path = self.get_seed_path(order_path)
-        if seed_path.exists() and not get_only_url:
-            log.info("Invalidating previous download URLs")
-            seed_path.unlink()
+        # in the same order folder there are multiple files, so a seed file is shared and can't be invalidated every time
+        # TODO the seed file is ok that is by single order or it is preferable a more stricted rule and having a seed file par file?
+        # seed_path = self.get_seed_path(order_path)
+        # if seed_path.exists() and not get_only_url:
+        #     log.info("Invalidating previous download URLs")
+        #     seed_path.unlink()
 
         # This is not a path, this s the string that will be encoded in the token
         relative_path = os.path.join(order_id, zip_file_name)
