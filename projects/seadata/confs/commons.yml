@@ -63,7 +63,7 @@ services:
     volumes:
       - ${RESOURCES_LOCALPATH}:${SEADATA_RESOURCES_MOUNTPOINT}
     environment:
-      MAIN_LOGIN_ENABLE: 0 # this could disable the basic /auth/login method
+      MAIN_LOGIN_ENABLE: 1 # this could disable the basic /auth/login method
 
       # db access
       ALCHEMY_ENABLE: 1
@@ -144,7 +144,7 @@ services:
       # needed by core tests because the template task tries to access to the db
       # do not include it restricted_celery and flower
       ALCHEMY_ENABLE: 1
-      MAIN_LOGIN_ENABLE: 0
+      MAIN_LOGIN_ENABLE: 1
       DEBUG_LEVEL: ${LOG_LEVEL}
       LOG_RETENTION: ${LOG_RETENTION}
       DOMAIN: ${PROJECT_DOMAIN}
@@ -280,7 +280,7 @@ services:
 
       #############################
       ACTIVATE: 1
-      MAIN_LOGIN_ENABLE: 0
+      MAIN_LOGIN_ENABLE: 1 
       APP_MODE: ${APP_MODE}
       DEBUG_LEVEL: ${LOG_LEVEL}
       LOG_RETENTION: ${LOG_RETENTION}
@@ -382,7 +382,7 @@ services:
 
       #############################
       ACTIVATE: 1
-      MAIN_LOGIN_ENABLE: 0
+      MAIN_LOGIN_ENABLE: 1
       APP_MODE: ${APP_MODE}
       DEBUG_LEVEL: ${LOG_LEVEL}
       LOG_RETENTION: ${LOG_RETENTION}
