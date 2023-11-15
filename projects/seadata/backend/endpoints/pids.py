@@ -23,6 +23,7 @@ if True:
         message="the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses",
     )
 
+import hashlib
 from pathlib import Path
 
 from restapi import decorators
@@ -68,14 +69,16 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
         log.debug("PID {} verified", pid)
         path = Path(dataobject_entry.path)
 
-        if not path:
-            raise NotFound(f"Object referenced by {pid} cannot be found")
+        if not path or not path.exists():
+            raise NotFound(f"File referenced by {pid} cannot be found")
 
         response = {
             "PID": pid,
             "verified": True,
             "metadata": {},
-            "temp_id": path.name,
+            "filename": path.name,
+            "filesize": path.stat().st_size,
+            "file_checksum": hashlib.md5(open(path, "rb").read()).hexdigest(),
             "batch_id": path.parent.name,
         }
 
