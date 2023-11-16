@@ -45,7 +45,7 @@ class PIDEndpoint(SeaDataEndpoint, Uploader, Downloader):
 
     labels = ["pids"]
 
-    @decorators.auth.require_all(Role.USER)
+    @decorators.auth.require()
     # "description": "Activate file downloading (if PID points to a single file)",
     @decorators.use_kwargs({"download": fields.Bool()}, location="query")
     @decorators.endpoint(
