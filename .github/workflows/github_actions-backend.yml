@@ -25,14 +25,7 @@ jobs:
 
       - name: Run Pytest
         run: |
-
-          IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
-          IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
-
-          # Please note the comma after SEADATA_PRIVILEGED_USERS,
-          # it is added to test the initialization func resilience in case of errors
-          rapydo --testing -e SEADATA_EDMO_CODE=1234 -e SEADATA_PRIVILEGED_USERS=${IRODS_USER}, -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
-          # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_INGESTION}
+          rapydo --testing -e SEADATA_EDMO_CODE=1234 init --force
           sudo mkdir -p /nfs/share/batches
           # == ${RESOURCES_LOCALPATH}/${SEADATA_WORKSPACE_ORDERS}
           sudo mkdir -p /nfs/share/orders
@@ -85,14 +78,11 @@ jobs:
       - name: Production mode
         run: |
 
-          IRODS_PASSWORD=$(grep ALCHEMY_PASSWORD .env | awk -F= {'print $2'})
-          IRODS_USER=$(grep IRODS_USER .env | awk -F= {'print $2'})
-
           sudo mkdir -p /nfs/share/batches
           sudo mkdir -p /nfs/share/orders
           sudo chmod 777 -R /nfs/share
 
-          rapydo --testing --prod -e SEADATA_EDMO_CODE=1234 -e ACTIVATE_ICAT=1 -e IRODS_PASSWORD=${IRODS_PASSWORD} init --force
+          rapydo --testing --prod -e SEADATA_EDMO_CODE=1234 init --force
           rapydo pull --quiet
           rapydo build
           rapydo ssl --volatile
