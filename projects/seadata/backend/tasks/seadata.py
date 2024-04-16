@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
-from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import UID_PREFIX, ImportManagerAPI
 
 # Size in bytes
@@ -23,8 +22,6 @@ CeleryExt.celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_acks_late=True,
 )
-
-pmaker = PIDgenerator()
 
 
 def notify_error(

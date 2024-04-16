@@ -4,7 +4,6 @@ from typing import Any, Dict
 from restapi.connectors.celery import CeleryExt, Task
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
-from seadata.connectors import irods
 from seadata.endpoints import ErrorCodes, SeaDataEndpoint
 from seadata.tasks.seadata import ext_api, notify_error
 

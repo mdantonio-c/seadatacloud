@@ -6,8 +6,8 @@ from restapi.env import Env
 from restapi.tests import AUTH_URI, BaseTests, FlaskClient
 from werkzeug.test import TestResponse as Response
 
-IRODS_USER = Env.get("IRODS_USER", "")
-IRODS_PASSWORD = Env.get("IRODS_PASSWORD", "")
+USER = Env.get("AUTH_DEFAULT_USERNAME", "")
+PASSWORD = Env.get("AUTH_DEFAULT_PASSWORD", "")
 
 
 class SeadataTests(BaseTests):
@@ -28,8 +28,8 @@ class SeadataTests(BaseTests):
     def login(self, client: FlaskClient) -> Dict[str, str]:
 
         r = client.post(
-            f"{AUTH_URI}/b2safeproxy",
-            json={"username": IRODS_USER, "password": IRODS_PASSWORD},
+            f"{AUTH_URI}/seadata/login",
+            json={"username": USER, "password": PASSWORD},
         )
 
         assert r.status_code == 200

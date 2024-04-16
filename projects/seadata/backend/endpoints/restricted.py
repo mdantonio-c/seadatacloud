@@ -8,10 +8,8 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from seadata.endpoints import (
     MOUNTPOINT,
-    ORDERS_COLL,
     ORDERS_DIR,
     EndpointsInputSchema,
     SeaDataEndpoint,

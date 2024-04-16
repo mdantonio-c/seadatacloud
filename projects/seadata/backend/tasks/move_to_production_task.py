@@ -9,7 +9,6 @@ from restapi.connectors.celery import CeleryExt, Task
 from restapi.exceptions import DatabaseDuplicatedEntry
 from restapi.utilities.logs import log
 from restapi.utilities.processes import start_timeout, stop_timeout
-from seadata.connectors.b2handle import PIDgenerator
 from seadata.connectors.rabbit_queue import prepare_message
 from seadata.endpoints import INGESTION_DIR, MOUNTPOINT, ErrorCodes
 from seadata.endpoints import Metadata as md

@@ -16,7 +16,6 @@ from restapi.utilities.logs import log
 from seadata.connectors.rancher import Rancher
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
-    INGESTION_COLL,
     INGESTION_DIR,
     MISSING_BATCH,
     MOUNTPOINT,

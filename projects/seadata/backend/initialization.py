@@ -35,8 +35,6 @@ class Initializer:
                             "name": username,
                             # password parameters will not be used witj b2safe users
                             "password": username,
-                            "surname": "iCAT",
-                            "authmethod": "irods",
                         }
                         user = sql.User(**userdata)
                         for r in roles:

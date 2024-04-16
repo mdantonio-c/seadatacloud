@@ -4,7 +4,6 @@ Ingestion process submission to upload the SeaDataNet marine data.
 from typing import Any, Dict
 
 import requests
-from irods.exception import NetworkException
 from restapi import decorators
 from restapi.connectors import celery
 from restapi.exceptions import (
@@ -17,12 +16,10 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
 from seadata.endpoints import (
     BATCH_MISCONFIGURATION,
     ENABLED_BATCH,
-    INGESTION_COLL,
     INGESTION_DIR,
     MISSING_BATCH,
     MOUNTPOINT,

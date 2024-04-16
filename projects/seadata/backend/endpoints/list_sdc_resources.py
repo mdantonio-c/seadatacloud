@@ -7,12 +7,9 @@ from restapi.exceptions import ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from seadata.endpoints import (
-    INGESTION_COLL,
     INGESTION_DIR,
     MOUNTPOINT,
-    ORDERS_COLL,
     ORDERS_DIR,
     EndpointsInputSchema,
     SeaDataEndpoint,

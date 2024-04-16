@@ -35,8 +35,6 @@ from restapi.services.authentication import Role, User
 from restapi.services.download import Downloader
 from restapi.services.uploader import Uploader
 from restapi.utilities.logs import log
-from seadata.connectors import irods
-from seadata.connectors.b2handle import PIDgenerator
 from seadata.endpoints import Metadata, SeaDataEndpoint
 
 

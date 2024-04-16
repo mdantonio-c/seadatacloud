@@ -15,7 +15,6 @@ from restapi.models import Schema, fields
 from restapi.rest.definition import EndpointResource, Response, ResponseContent
 from restapi.services.authentication import import_secret
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from webargs import fields as webargs_fields
 
 seadata_vars = Env.load_variables_group(prefix="seadata")
@@ -38,9 +37,9 @@ for production batches, and for orders being prepared.
 
 They are being defined project_configuration.yml / .projectrc
 """
-INGESTION_COLL = seadata_vars.get("ingestion_coll") or "batches"
-ORDERS_COLL = seadata_vars.get("orders_coll") or "orders"
-PRODUCTION_COLL = seadata_vars.get("production_coll") or "cloud"
+# INGESTION_COLL = seadata_vars.get("ingestion_coll") or "batches"
+# ORDERS_COLL = seadata_vars.get("orders_coll") or "orders"
+# PRODUCTION_COLL = seadata_vars.get("production_coll") or "cloud"
 MOUNTPOINT = Path(seadata_vars.get("resources_mountpoint") or "/usr/share")
 
 """
@@ -128,17 +127,6 @@ class SeaDataEndpoint(EndpointResource):
         """
         # "/usr/share/batch" (hard-coded)
         return str(Path(FS_PATH_IN_CONTAINER))
-
-    def get_irods_path(
-        self,
-        irods_client: irods.IrodsPythonExt,
-        main_collection: str,  # oneof PRODUCTION_COLL, INGESTION_COLL, ORDERS_COLL
-        obj_id: str = "",  # one of batch_id or order_id or empty
-    ) -> str:
-        """
-        Helper to construct a path of a data object in irods
-        """
-        return irods_client.get_current_zone(suffix=Path(main_collection, obj_id))
 
     def return_async_id(self, request_id: str) -> Response:
         # dt = "20170712T15:33:11"
@@ -242,56 +230,6 @@ class SeaDataEndpoint(EndpointResource):
             return NOT_FILLED_BATCH, fs_files
 
         return PARTIALLY_ENABLED_BATCH, fs_files
-
-    def irods_user(self, username: str) -> str:
-
-        user = self.auth.get_user(username)
-        sql = sqlalchemy.get_instance()
-
-        if user is not None:
-            log.debug("iRODS user already cached: {}", username)
-        else:
-
-            userdata = {
-                "email": username,
-                "name": username,
-                # Password will not be used because the authmethod is `irods`
-                "password": username,
-                "surname": "iCAT",
-                "authmethod": "irods",
-            }
-            user = self.auth.create_user(userdata, [self.auth.default_role])
-            try:
-                sql.session.commit()
-                log.info("Cached iRODS user: {}", username)
-            except BaseException as e:
-                sql.session.rollback()
-                log.error("Errors saving iRODS user: {}", username)
-                log.error(str(e))
-                log.error(type(e))
-
-                user = self.auth.get_user(username)
-                # Unable to do something...
-                if user is None:
-                    raise e
-
-        # token
-        payload, full_payload = self.auth.fill_payload(user)
-        token = self.auth.create_token(payload)
-        now = datetime.now(pytz.utc)
-        if user.first_login is None:
-            user.first_login = now
-        user.last_login = now
-        try:
-            sql.session.add(user)
-            sql.session.commit()
-        except BaseException as e:
-            log.error("DB error ({}), rolling back", e)
-            sql.session.rollback()
-
-        self.auth.save_token(user, token, full_payload)
-
-        return token
 
     def get_seed_path(self, abs_order_path: Path) -> Path:
         return abs_order_path.joinpath(".seed")

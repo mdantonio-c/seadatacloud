@@ -23,7 +23,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import requests
-from irods.exception import NetworkException
 from restapi import decorators
 from restapi.config import get_backend_url
 from restapi.connectors import celery
@@ -32,11 +31,9 @@ from restapi.rest.definition import Response
 from restapi.services.authentication import User
 from restapi.services.download import Downloader
 from restapi.utilities.logs import log
-from seadata.connectors import irods
 from seadata.connectors.rabbit_queue import log_into_queue, prepare_message
 from seadata.endpoints import (
     MOUNTPOINT,
-    ORDERS_COLL,
     ORDERS_DIR,
     EndpointsInputSchema,
     SeaDataEndpoint,

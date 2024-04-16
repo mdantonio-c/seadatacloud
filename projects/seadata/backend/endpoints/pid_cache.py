@@ -5,13 +5,7 @@ from restapi.exceptions import NotFound, ServiceUnavailable
 from restapi.rest.definition import Response
 from restapi.services.authentication import Role, User
 from restapi.utilities.logs import log
-from seadata.connectors import irods
-from seadata.endpoints import (
-    MOUNTPOINT,
-    PRODUCTION_COLL,
-    PRODUCTION_DIR,
-    SeaDataEndpoint,
-)
+from seadata.endpoints import MOUNTPOINT, PRODUCTION_DIR, SeaDataEndpoint
 
 
 class PidCache(SeaDataEndpoint):
