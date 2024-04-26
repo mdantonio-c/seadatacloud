@@ -1,5 +1,5 @@
 ###################
-FROM ubuntu:16.04
+FROM ubuntu:24.04
 LABEL maintainer="Paolo D'Onorio De Meo <m.dantonio@cineca.it>"
 
 ARG CURRENT_UID
