@@ -1,4 +1,4 @@
-FROM rapydo/backend-legacy39:2.3
+FROM rapydo/backend-legacy39:3.1
 
 ARG RAPYDO_VERSION
 RUN test -n "$RAPYDO_VERSION"
