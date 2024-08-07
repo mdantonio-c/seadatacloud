@@ -40,6 +40,7 @@ def unrestricted_order(
     order_dir = MOUNTPOINT.joinpath(ORDERS_DIR, order_id)
     local_zip_dir = order_dir.joinpath("tobezipped")
     local_zip_dir.mkdir(parents=True, exist_ok=True)
+    oversize_file_dir = local_zip_dir.parent.joinpath("oversize_files")
 
     r = redis.get_instance().r
     try:
@@ -173,9 +174,10 @@ def unrestricted_order(
             #     log.debug("Set metadata")
 
         if counter > 0:
+            split_path = order_dir.joinpath("unrestricted_zip_split")
+            zip_path = order_dir.joinpath(zip_file_name)
             ##################
             # Zip the dir
-            zip_path = order_dir.joinpath(zip_file_name)
             log.debug("Zip path: {}", zip_path)
             if not zip_path.exists() or zip_path.stat().st_size == 0:
                 make_archive(
@@ -190,50 +192,120 @@ def unrestricted_order(
 
             if os.path.getsize(str(zip_path)) > MAX_ZIP_SIZE:
                 log.warning("Zip too large, splitting {}", zip_path)
+                # check if there are oversize files
+                # check if the file is bigger than the max zip size
+                file_list = list(local_zip_dir.glob("*"))
+                for file in file_list:
+                    if file.stat().st_size >= MAX_ZIP_SIZE:
+                        # check if an oversize directory exists, if not create it
+                        if not oversize_file_dir.exists():
+                            oversize_file_dir.mkdir()
+                        # move the file in the oversize directory
+                        file.rename(oversize_file_dir.joinpath(file.name))
+                if (
+                    oversize_file_dir.exists()
+                    and len(list(oversize_file_dir.glob("*"))) > 0
+                ):
+                    oversize_number = len(list(oversize_file_dir.glob("*")))
+                    log.info(f"{oversize_number} Oversize files found")
+                    if len(list(local_zip_dir.glob("*"))) > 0:
+                        zipfile_to_split = zip_path.parent.joinpath(
+                            f"{zip_path.stem}_tmp.zip"
+                        )
+                        make_archive(
+                            base_name=str(
+                                zip_path.parent.joinpath(f"{zip_path.stem}_tmp")
+                            ),
+                            format="zip",
+                            root_dir=local_zip_dir,
+                        )
 
-                # Create a sub folder for split files. If already exists,
-                # remove it before to start from a clean environment
-                split_path = order_dir.joinpath("unrestricted_zip_split")
-                rmtree(str(split_path), ignore_errors=True)
-                split_path.mkdir()
+                        log.info("New zip to split compressed in: {}", zipfile_to_split)
+                    else:
+                        # all the files are in the oversize file dir so there is nothing to split
+                        zipfile_to_split = None
+                else:
+                    zipfile_to_split = zip_path
 
-                # Execute the split of the whole zip
-                split_params = [
-                    "-n",
-                    MAX_ZIP_SIZE,
-                    "-b",
-                    str(split_path),
-                    zip_path,
-                ]
-                try:
-                    zipsplit = local["/usr/bin/zipsplit"]
-                    zipsplit(split_params)
-                except ProcessExecutionError as e:
+                if zipfile_to_split:
+                    # Create a sub folder for split files. If already exists,
+                    # remove it before to start from a clean environment
+                    rmtree(str(split_path), ignore_errors=True)
+                    split_path.mkdir()
 
-                    if "Entry is larger than max split size" in e.stdout:
-                        reg = r"Entry too big to split, read, or write \((.*)\)"
-                        extra = None
-                        m = re.search(reg, e.stdout)
-                        if m:
-                            extra = m.group(1)
+                    # Execute the split of the whole zip
+                    split_params = [
+                        "-n",
+                        MAX_ZIP_SIZE,
+                        "-b",
+                        str(split_path),
+                        zipfile_to_split,
+                    ]
+                    try:
+                        zipsplit = local["/usr/bin/zipsplit"]
+                        zipsplit(split_params)
+                    except ProcessExecutionError as e:
+
+                        if "Entry is larger than max split size" in e.stdout:
+                            reg = r"Entry too big to split, read, or write \((.*)\)"
+                            extra = None
+                            m = re.search(reg, e.stdout)
+                            if m:
+                                extra = m.group(1)
+                            return notify_error(
+                                ErrorCodes.ZIP_SPLIT_ENTRY_TOO_LARGE,
+                                myjson,
+                                backdoor,
+                                self,
+                                extra=extra,
+                            )
+                        else:
+                            log.error(e.stdout)
+
                         return notify_error(
-                            ErrorCodes.ZIP_SPLIT_ENTRY_TOO_LARGE,
+                            ErrorCodes.ZIP_SPLIT_ERROR,
                             myjson,
                             backdoor,
                             self,
-                            extra=extra,
+                            extra=str(zip_path),
                         )
-                    else:
-                        log.error(e.stdout)
-
-                    return notify_error(
-                        ErrorCodes.ZIP_SPLIT_ERROR,
-                        myjson,
-                        backdoor,
-                        self,
-                        extra=str(zip_path),
+            # if there are oversize files zip them
+            if (
+                oversize_file_dir.exists()
+                and len(list(oversize_file_dir.glob("*"))) > 0
+            ):
+                # check if zip split directory exists, if not create it
+                if not split_path.exists():
+                    split_path.mkdir()
+                    zipsplit_index = 1
+                else:
+                    zipsplit_index = len(list(split_path.glob("*"))) + 1
+                oversize_list = list(oversize_file_dir.glob("*"))
+                for f in oversize_list:
+                    tmp_dir = oversize_file_dir.joinpath("tmp")
+                    tmp_dir.mkdir(exist_ok=True)
+                    # make_archive can't create an archive from file (only from a folder)
+                    tmp_file = tmp_dir.joinpath(f.name)
+                    f.rename(tmp_file)
+                    make_archive(
+                        base_name=str(
+                            split_path.joinpath(f"oversize{str(zipsplit_index)}")
+                        ),
+                        format="zip",
+                        root_dir=tmp_dir,
                     )
+                    # move back the file on the oversize_cache cache
+                    tmp_file.rename(f)
+                    zipsplit_index += 1
 
+                    rmtree(tmp_dir)
+
+                # to save space, delete the folder where oversize files were stored
+                rmtree(str(oversize_file_dir), ignore_errors=True)
+
+            subzip_counter = 0
+            # if there are splitted zips or oversize zips rename them
+            if len(list(split_path.glob("*"))) > 0:
                 regexp = "^.*[^0-9]([0-9]+).zip$"
                 zip_files = os.listdir(split_path)
                 base_filename, _ = os.path.splitext(zip_file_name)
@@ -272,6 +344,7 @@ def unrestricted_order(
                             self,
                             extra=str(subzip_path),
                         )
+                subzip_counter += 1
 
                 # to save space, delete the folder where splitted files were stored
                 rmtree(str(split_path), ignore_errors=True)
@@ -283,11 +356,18 @@ def unrestricted_order(
         )
         rmtree(str(local_zip_dir), ignore_errors=True)
 
+        # check if temporary files are present and delete them
+        temp_zipfile = zip_path.parent.joinpath(f"{zip_path.stem}_tmp.zip")
+        if temp_zipfile.exists():
+            temp_zipfile.unlink()
+
         # CDI notification
         reqkey = "request_id"
         msg = prepare_message(self, get_json=True)
         zipcount = 0
-        if counter > 0:
+        if subzip_counter > 0:
+            zipcount = subzip_counter
+        elif counter > 0:
             # FIXME: what about when restricted is there?
             zipcount += 1
         myjson["parameters"] = {
